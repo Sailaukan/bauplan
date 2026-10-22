@@ -150,10 +150,24 @@ code { font-family: var(--mono); font-size: 0.9em; }
 /* Data and model-call pages */
 .page { margin-top: 6px; display: grid; gap: 18px; }
 .page > p { margin: 0; color: var(--muted); max-width: 84ch; }
-.index { display: flex; flex-wrap: wrap; gap: 6px; }
-.index button { font: 500 12.5px/1 var(--mono); padding: 7px 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--panel); color: var(--fg); cursor: pointer; }
-.index button:hover { border-color: var(--muted); }
-.index button span { margin-left: 7px; color: var(--faint); font-family: var(--font); font-size: 11.5px; }
+/* Data page: a sticky list of tables, grouped by the stage that first touches them, beside the cards. */
+.datagrid { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; align-items: start; }
+.tables { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 64px); max-height: calc(100vh - 84px); overflow-y: auto; display: grid; gap: 16px; padding: 2px 6px 12px 0; }
+.tables input { box-sizing: border-box; width: 100%; font: 13px var(--font); color: var(--fg); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 9px; }
+.tgroup { display: grid; gap: 1px; }
+.tgroup h4, .stage { margin: 0 0 4px; font: 600 10.5px/1.3 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.tgroup button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 5px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--fg); text-align: left; font: 12.5px/1.3 var(--mono); cursor: pointer; }
+.tgroup button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgroup button small { flex: none; color: var(--faint); font: 11.5px var(--font); font-variant-numeric: tabular-nums; }
+.tgroup button:hover { background: var(--seg); }
+.tables .none { margin: 0; color: var(--muted); font-size: 13px; }
+.tgroup[hidden], .tgroup button[hidden], .cgroup[hidden], .entity[hidden], .tables .none[hidden] { display: none; }
+.cards { display: grid; gap: 26px; min-width: 0; }
+.cgroup { display: grid; gap: 14px; }
+@media (max-width: 900px) {
+  .datagrid { grid-template-columns: minmax(0, 1fr); }
+  .tables { position: static; max-height: 280px; padding: 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); }
+}
 .entity { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; display: grid; gap: 16px; min-width: 0; scroll-margin-top: 120px; }
 .entity header { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
 .entity h3 { margin: 0; font: 600 16px/1.3 var(--mono); }
@@ -199,7 +213,38 @@ tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--seg); }
 .tag { display: inline-block; font: 600 10px/1 var(--font); letter-spacing: 0.06em; padding: 3px 6px; border-radius: 3px; border: 1px solid currentColor; }
 .tag.LLM { color: var(--llm); } .tag.API { color: var(--api); } .tag.READ, .tag.WRITE { color: var(--data); }
-.unit h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+/* Model calls page: one two-line row per call, numbers in aligned columns. */
+.msum { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.unit { display: grid; gap: 8px; }
+.unit header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; padding: 0 16px 4px 60px; }
+.unit h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.unit h3 small { margin-left: 8px; color: var(--muted); font-size: 13px; font-weight: 400; }
+.cols, .nums { display: grid; grid-template-columns: 116px 72px 62px; gap: 14px; text-align: right; }
+.withrun .cols, .withrun .nums { grid-template-columns: 116px 72px 62px 112px; }
+.cols span { font: 600 10.5px/1.2 var(--font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.calls { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.call { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 12px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; cursor: pointer; }
+.call:hover { border-color: var(--muted); }
+.call:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.call .blk { margin-top: 1px; text-align: center; cursor: inherit; }
+.what { display: grid; gap: 3px; min-width: 0; }
+.what .l1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.what .l1 b { font-size: 14px; font-weight: 600; }
+.what .l1 code { color: var(--muted); font-size: 12px; }
+.earlier { padding: 1px 7px; border: 1px solid var(--warn); border-radius: 999px; color: var(--warn); font-size: 11px; }
+.what .l2 { display: flex; flex-wrap: wrap; gap: 2px 18px; color: var(--muted); font-size: 13px; }
+.what .l2 em { margin-right: 6px; color: var(--faint); font-style: normal; }
+.what .l3 { margin: 0; overflow: hidden; color: var(--faint); font: 12px/1.4 var(--mono); white-space: nowrap; text-overflow: ellipsis; }
+.nums { padding-top: 1px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.nums .run { color: var(--run); font-weight: 500; }
+.nums i { display: none; margin-right: 4px; color: var(--faint); font-style: normal; }
+@media (max-width: 760px) {
+  .unit header { padding-left: 16px; }
+  .unit header .cols { display: none; }
+  .call { grid-template-columns: 30px minmax(0, 1fr); }
+  .nums { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 14px; text-align: left; }
+  .nums i { display: inline; }
+}
 
 /* Card drawer */
 #card {
@@ -389,6 +434,9 @@ SPEC.bands.forEach(band => {
   band.main.forEach(id => { if (SPEC.nodes[id] && SPEC.nodes[id].detail) ORDER.push(id); });
   (band.side || []).forEach(sd => { if (SPEC.nodes[sd.id] && SPEC.nodes[sd.id].detail) ORDER.push(sd.id); });
 });
+// Which band each node sits in, so tables can be grouped by the stage that first touches them.
+const NODE_BAND = {};
+SPEC.bands.forEach((band, i) => [...band.main, ...(band.side || []).map(sd => sd.id)].forEach(id => { NODE_BAND[id] = i; }));
 const FX = {};          // effect id -> { fx, node, row, key }
 const RISKS = [];       // { node, row, key, text }, in the order the workflow reaches them
 ORDER.forEach(id => walkRows(SPEC.nodes[id].detail, `${id}:`, (row, key) => {
@@ -1119,52 +1167,96 @@ function buildDataPage() {
     return `<details class="steps"><summary>${plural(e.touches.length, 'step')} read or write it</summary><div class="tablewrap"><table>`
       + `<thead><tr><th>Step</th><th></th><th>Fields</th><th>Sets</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
   };
-  return `<p>Every table and store the agent touches. Each status reads left to right in the order the main path sets it; the small numbers are the blocks that set each value, and open them.</p>`
-    + `<div class="index">${list.map(e => `<button type="button" data-jump="${esc(slug(e.name))}">${esc(e.name)}<span>${e.reads + e.writes}</span></button>`).join('')}</div>`
-    + list.map(e => `<section class="entity" id="e-${esc(slug(e.name))}">`
-      + `<header><h3>${esc(e.name)}</h3><span class="count">${plural(e.writes, 'write')} · ${plural(e.reads, 'read')}</span>`
-      + `<button class="ghost" type="button" data-show-entity="${esc(e.name)}">Highlight in Detailed</button></header>`
-      + (Object.keys(e.life).length
-        ? `<div class="lives">${Object.entries(e.life).map(([field, writes]) => `<div class="life"><div class="field">${esc(field)}</div><div class="flow">${lifecycle(writes, e.name)}</div></div>`).join('')}</div>`
-        : '')
-      + stepsTable(e)
-      + `</section>`).join('');
+  const card = e => `<section class="entity" id="e-${esc(slug(e.name))}" data-name="${esc(e.name.toLowerCase())}">`
+    + `<header><h3>${esc(e.name)}</h3><span class="count">${plural(e.writes, 'write')} · ${plural(e.reads, 'read')}</span>`
+    + `<button class="ghost" type="button" data-show-entity="${esc(e.name)}">Highlight in Detailed</button></header>`
+    + (Object.keys(e.life).length
+      ? `<div class="lives">${Object.entries(e.life).map(([field, writes]) => `<div class="life"><div class="field">${esc(field)}</div><div class="flow">${lifecycle(writes, e.name)}</div></div>`).join('')}</div>`
+      : '')
+    + stepsTable(e)
+    + `</section>`;
+  // Tables grouped by the stage that first touches them, busiest first; the same order in the list and the cards.
+  const stages = SPEC.bands.map((band, i) => ({ title: band.title, items: list.filter(e => NODE_BAND[e.touches[0].id] === i) }));
+  const elsewhere = list.filter(e => NODE_BAND[e.touches[0].id] == null);
+  if (elsewhere.length) stages.push({ title: 'Elsewhere', items: elsewhere });
+  const shown = stages.filter(s => s.items.length);
+  const nav = `<nav class="tables" aria-label="Tables">`
+    + `<input type="search" id="table-filter" placeholder="Filter ${list.length} tables" aria-label="Filter tables" autocomplete="off">`
+    + shown.map(s => `<div class="tgroup"><h4>${esc(s.title)}</h4>${s.items.map(e => `<button type="button" data-jump="${esc(slug(e.name))}" data-name="${esc(e.name.toLowerCase())}"><span>${esc(e.name)}</span><small>${e.reads + e.writes}</small></button>`).join('')}</div>`).join('')
+    + `<p class="none" hidden>No table matches.</p></nav>`;
+  const cards = shown.map(s => `<div class="cgroup"><h4 class="stage">${esc(s.title)}</h4>${s.items.map(card).join('')}</div>`).join('');
+  return `<p>Every table and store the agent touches, grouped by the stage that first touches it. Each status reads left to right in the order the main path sets it; the small numbers are the blocks that set each value, and open them.</p>`
+    + `<div class="datagrid">${nav}<div class="cards">${cards}</div></div>`;
 }
 
-function statsCells(fx) {
-  const s = fx.feature && STATS[fx.feature];
-  if (!s) return '<td class="num">—</td><td class="num">—</td><td class="num">—</td>';
-  const on = s.model && fx.model && s.model !== fx.model ? `<div class="mono">on ${esc(s.model)}</div>` : '';
-  return `<td class="num">${fmtInt(s.in_tokens || 0)} / ${fmtInt(s.out_tokens || 0)}${on}</td>`
-    + `<td class="num">${s.cost_usd != null ? `$${Number(s.cost_usd).toFixed(4)}` : '—'}</td>`
-    + `<td class="num">${s.ms_p50 != null ? `${(s.ms_p50 / 1000).toFixed(1)} s` : '—'}</td>`;
-}
-
-function buildModelsPage() {
-  const groups = {};
-  Object.entries(FX).forEach(([fxId, item]) => {
-    if (item.fx.tag !== 'LLM') return;
-    const unit = item.fx.unit || 'other';
-    (groups[unit] || (groups[unit] = [])).push({ fxId, ...item });
+// Narrows the table list and the cards to names containing the text typed.
+function filterTables(text) {
+  const q = text.trim().toLowerCase();
+  const page = document.getElementById('page');
+  page.querySelectorAll('.tgroup').forEach(group => {
+    let any = false;
+    group.querySelectorAll('button[data-name]').forEach(b => { b.hidden = Boolean(q) && !b.dataset.name.includes(q); any = any || !b.hidden; });
+    group.hidden = !any;
   });
+  page.querySelectorAll('.cgroup').forEach(group => {
+    let any = false;
+    group.querySelectorAll('.entity').forEach(c => { c.hidden = Boolean(q) && !c.dataset.name.includes(q); any = any || !c.hidden; });
+    group.hidden = !any;
+  });
+  const none = page.querySelector('.tables .none');
+  if (none) none.hidden = Boolean(page.querySelector('.tgroup:not([hidden])'));
+}
+
+let modelFilter = '';
+function buildModelsPage() {
+  const all = Object.entries(FX).filter(([, item]) => item.fx.tag === 'LLM').map(([fxId, item]) => ({ fxId, ...item }));
+  const models = {};
+  all.forEach(g => { models[g.fx.title] = (models[g.fx.title] || 0) + 1; });
   // Units in the order the workflow first reaches them.
-  const units = Object.keys(groups);
+  const groups = {};
+  all.filter(g => !modelFilter || g.fx.title === modelFilter).forEach(g => {
+    const unit = g.fx.unit || 'other';
+    (groups[unit] || (groups[unit] = [])).push(g);
+  });
   const ex = example();
   const runCalls = (ex && ex.calls) || null;
-  const runCell = fx => {
-    if (!runCalls) return '';
-    const c = fx.feature && runCalls[fx.feature];
-    return `<td class="num">${c ? `${fmtInt(c.count)}${c.cost_usd != null ? ` · $${Number(c.cost_usd).toFixed(4)}` : ''}` : '0'}</td>`;
-  };
   const runTotal = runCalls ? Object.values(runCalls).reduce((a, c) => ({ count: a.count + (c.count || 0), cost: a.cost + (c.cost_usd || 0) }), { count: 0, cost: 0 }) : null;
-  return `<p>Every model call, by the unit of work it runs for. Usage numbers are averages per call from your usage log. Click a row for its prompt and output schema.</p>`
-    + (runTotal ? `<p>The example run made ${fmtInt(runTotal.count)} model calls for about $${runTotal.cost.toFixed(3)}; the "This run" column shows how many of each, and what they cost.</p>` : '')
-    + units.map(unit => `<div class="unit"><h3>For each ${esc(unit)}</h3><div class="tablewrap"><table><thead><tr>`
-      + `<th>Block</th><th>Called from</th><th>Model</th><th>How often</th><th>Rule on the answer</th><th>Tokens in / out</th><th>Cost</th><th>Median time</th>${runCalls ? '<th>This run</th>' : ''}</tr></thead><tbody>`
-      + groups[unit].map(g => `<tr class="clickable" data-card="${esc(g.fxId)}"><td>${SPEC.nodes[g.node].num ? String(SPEC.nodes[g.node].num).padStart(2, '0') : '·'}</td>`
-        + `<td class="mono">${esc(rowLabel(g.row))}</td><td>${esc(g.fx.title)}${g.fx.feature ? `<div class="mono">${esc(g.fx.feature)}</div>` : ''}</td>`
-        + `<td>${esc(g.fx.times || '')}</td><td>${esc(g.fx.threshold || '')}</td>${statsCells(g.fx)}${runCell(g.fx)}</tr>`).join('')
-      + `</tbody></table></div></div>`).join('');
+  const num = (label, value, cls = '') => `<span class="${cls}"><i>${label}</i>${value}</span>`;
+  const row = g => {
+    const st = g.fx.feature && STATS[g.fx.feature];
+    const earlier = st && st.model && g.fx.model && st.model !== g.fx.model;
+    const run = runCalls && g.fx.feature ? runCalls[g.fx.feature] : null;
+    const nums = [
+      num('tokens', st && st.in_tokens != null ? `${fmtInt(st.in_tokens)} / ${fmtInt(st.out_tokens || 0)}` : '—'),
+      num('cost', st && st.cost_usd != null ? `$${Number(st.cost_usd).toFixed(4)}` : '—'),
+      num('time', st && st.ms_p50 != null ? `${(st.ms_p50 / 1000).toFixed(1)} s` : '—'),
+      ...(runCalls ? [num('this run', run ? `${fmtInt(run.count)}× · $${Number(run.cost_usd || 0).toFixed(4)}` : 'not called', 'run')] : []),
+    ].join('');
+    const meta = [
+      g.fx.times ? `<span><em>Runs</em>${esc(g.fx.times)}</span>` : '',
+      g.fx.threshold ? `<span><em>Rule</em>${esc(g.fx.threshold)}</span>` : '',
+    ].join('');
+    const block = SPEC.nodes[g.node].num ? String(SPEC.nodes[g.node].num).padStart(2, '0') : '·';
+    return `<li class="call" data-card="${esc(g.fxId)}" tabindex="0" role="button" aria-label="${esc(`${g.fx.title} ${g.fx.feature || ''}: show details`)}">`
+      + `<span class="blk" title="${esc(blockLabel(g.node))}">${block}</span>`
+      + `<div class="what"><div class="l1"><b>${esc(g.fx.title)}</b>${g.fx.feature ? `<code>${esc(g.fx.feature)}</code>` : ''}`
+      + `${earlier ? `<span class="earlier" title="Usage measured on ${esc(st.model)}">earlier model</span>` : ''}</div>`
+      + (meta ? `<div class="l2">${meta}</div>` : '')
+      + `<p class="l3" title="${esc(rowLabel(g.row))}">${esc(rowLabel(g.row))}</p></div>`
+      + `<div class="nums">${nums}</div></li>`;
+  };
+  const cols = `<div class="cols"><span>Tokens in / out</span><span>Cost</span><span>Median</span>${runCalls ? '<span>This run</span>' : ''}</div>`;
+  const filter = Object.keys(models).length > 1
+    ? `<div class="msum"><span class="glabel">Model</span><span class="chips" role="group" aria-label="Show calls to one model">`
+      + `<button type="button" data-model="" aria-pressed="${!modelFilter}">All · ${all.length}</button>`
+      + Object.entries(models).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<button type="button" data-model="${esc(m)}" aria-pressed="${modelFilter === m}">${esc(m)} · ${n}</button>`).join('')
+      + `</span></div>`
+    : '';
+  return `<p>Every place the agent calls a model, by the unit of work it runs for. Numbers are averages per call from your usage log; click a call for its prompt and output schema.</p>`
+    + (runTotal ? `<p>The example run made ${fmtInt(runTotal.count)} model calls for about $${runTotal.cost.toFixed(3)}; the This run column shows how many of each.</p>` : '')
+    + filter
+    + Object.entries(groups).map(([unit, items]) => `<section class="unit${runCalls ? ' withrun' : ''}"><header><h3>For each ${esc(unit)}<small>${items.length} call${items.length === 1 ? '' : 's'}</small></h3>${cols}</header>`
+      + `<ol class="calls">${items.map(row).join('')}</ol></section>`).join('');
 }
 
 function buildRisksPage() {
@@ -1399,6 +1491,8 @@ function show(next, opts = {}) {
     else if (fx) openCard(fx.dataset.fx);
   });
   document.getElementById('page').addEventListener('click', e => {
+    const model = e.target.closest('[data-model]');
+    if (model) { modelFilter = model.dataset.model; render(); return; }
     const jump = e.target.closest('[data-jump]');
     if (jump) { const card = document.getElementById(`e-${jump.dataset.jump}`); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const goto = e.target.closest('[data-goto]');
@@ -1407,6 +1501,11 @@ function show(next, opts = {}) {
     if (showEntity) { show('detailed', { only: '', find: showEntity.dataset.showEntity }); return; }
     const row = e.target.closest('[data-card]');
     if (row) openCard(row.dataset.card);
+  });
+  document.getElementById('page').addEventListener('input', e => { if (e.target.id === 'table-filter') filterTables(e.target.value); });
+  document.getElementById('page').addEventListener('keydown', e => {
+    const row = e.target.closest('.call[data-card]');
+    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCard(row.dataset.card); }
   });
   document.getElementById('copy').addEventListener('click', () => {
     const svg = view === 'overview' ? buildOverview('export') : buildDetailed('export', only);
