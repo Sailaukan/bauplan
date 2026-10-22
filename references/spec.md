@@ -156,7 +156,8 @@ returns a decision.
 ```
 
 Averages per successful call; `ms_p50` is the median duration in milliseconds. When the numbers were measured on a
-different model than the one the code calls now, `model` says which, and the viewer shows it.
+different model than the one the code calls now, `model` says which, and the viewer shows it. A dated snapshot the
+provider logs counts as the model the code calls: `gpt-4o-2024-08-06` for `gpt-4o`, but not `gpt-4o-mini`.
 
 ## Example runs
 
