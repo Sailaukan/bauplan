@@ -46,57 +46,92 @@ body {
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.5;
+  padding-block: 0 56px;
+}
+/* Paints the band above the pinned bar on phones with a notch. */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 11; background: var(--bg); }
+.wrap {
+  box-sizing: border-box;
+  max-width: 1372px;
+  margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 28px 56px;
 }
-.wrap { max-width: 1340px; margin: 0 auto; }
-h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
-#fresh { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 110ch; }
-#fresh b { font-weight: 600; }
-#fresh .warn { color: var(--warn); }
-#fresh .bad { color: var(--bad); }
-#fresh .ok { color: var(--ok); }
-.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
-.tabs { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 3px; border-radius: 8px; background: var(--seg); }
-.tabs button, .chips button {
-  font: 500 14px/1 var(--font);
-  padding: 9px 14px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-}
-.tabs button[aria-selected="true"], .chips button[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
-.plain {
-  font: 500 14px/1 var(--font);
-  padding: 9px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--rule);
-  background: transparent;
-  color: var(--fg);
-  cursor: pointer;
-}
-button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, [data-block]:focus-visible, [data-fx]:focus-visible {
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible, [data-block]:focus-visible, [data-fx]:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
-#status { color: var(--muted); font-size: 13px; }
-.pick { display: inline-flex; gap: 8px; align-items: center; font-size: 13.5px; color: var(--muted); }
-.pick select { font: 14px var(--font); color: var(--fg); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 9px; max-width: 100%; }
-#example-line { margin: 12px 0 0; max-width: 110ch; font-size: 13.5px; color: var(--fg); border-left: 3px solid var(--run); padding: 2px 0 2px 10px; }
-#example-line small { display: block; color: var(--muted); font-size: 12.5px; }
-#fallback { display: block; width: 100%; height: 120px; margin-top: 12px; font: 12px var(--mono); }
-#fallback[hidden] { display: none; }
-.toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 16px; font-size: 13.5px; color: var(--muted); }
-.toolbar label { display: inline-flex; gap: 8px; align-items: center; }
-.toolbar select, .toolbar input {
-  font: 14px var(--font); color: var(--fg); background: var(--panel);
-  border: 1px solid var(--rule); border-radius: 6px; padding: 7px 9px; min-width: 0;
+
+/* Title row: the mark, the agent's name, and whether the diagram still matches the code. */
+.top .wrap { padding-top: 22px; padding-bottom: 12px; }
+.titlebar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.mark { flex: none; display: block; }
+h1 { flex: 1 1 280px; min-width: 0; margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
+.pop { position: relative; }
+.pop > summary { list-style: none; cursor: pointer; }
+.pop > summary::-webkit-details-marker { display: none; }
+.panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 15;
+  width: min(440px, calc(100vw - 32px));
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+  box-shadow: 0 14px 36px rgba(15, 20, 30, 0.14);
+  padding: 14px 16px; font-size: 13px; color: var(--fg);
 }
-.chips { display: inline-flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: 8px; background: var(--seg); }
-.chips button { padding: 7px 11px; font-size: 13px; }
-figure { margin: 20px auto 0; max-width: 1340px; }
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; border: 1px solid var(--rule); border-radius: 999px; background: var(--panel); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+.status.warn .dot { background: var(--warn); }
+.status.bad .dot { background: var(--bad); }
+.status.none .dot { background: var(--faint); }
+.status code { color: var(--muted); font-size: 12px; font-weight: 400; }
+.status::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg) translateY(-2px); margin-left: 2px; }
+.panel dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 7px 14px; }
+.panel dt { color: var(--muted); }
+.panel dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.panel .warn { color: var(--warn); }
+.panel .bad { color: var(--bad); }
+.panel .made { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 12px; }
+.panel a { color: var(--accent); }
+
+/* The bar: views on the left, legend and copy on the right; pinned while the page scrolls. */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.bar-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 12px; }
+.tabs { display: flex; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tabs button {
+  font: 500 14px/1 var(--font); padding: 12px 11px 11px; border: 0; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap;
+}
+.tabs button:hover { color: var(--fg); }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+.tabs .count { display: inline-block; min-width: 18px; margin-left: 6px; padding: 2px 5px; border-radius: 999px; background: var(--warn); color: var(--panel); font-size: 11px; font-weight: 600; text-align: center; }
+.bar-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; }
+.ghost { font: 500 13px/1 var(--font); padding: 8px 11px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--fg); cursor: pointer; white-space: nowrap; }
+.ghost:hover { border-color: var(--muted); }
+#status { color: var(--muted); font-size: 12.5px; }
+.legend { width: min(600px, calc(100vw - 32px)); display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 9px 16px; }
+.legend .lg { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.legend svg { flex: none; }
+
+/* The toolbar: what to show, what to highlight, which example run. Only on views that use it. */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; padding-top: 9px; padding-bottom: 10px; border-top: 1px solid var(--rule); }
+.toolbar[hidden], .group[hidden] { display: none; }
+.group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.glabel { font: 600 10.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.toolbar select, .toolbar input {
+  font: 13px var(--font); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; min-width: 0; max-width: 100%;
+}
+.toolbar input { width: 160px; }
+.toolbar select { width: auto; max-width: 230px; text-overflow: ellipsis; }
+.chips { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 7px; background: var(--seg); }
+.chips button { font: 500 12.5px/1 var(--font); padding: 6px 9px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 0 0 1px var(--rule); }
+
+/* Content */
+.lead { padding-top: 14px; }
+#example-line { margin: 0 0 4px; max-width: 110ch; font-size: 13.5px; color: var(--fg); border-left: 3px solid var(--run); padding: 2px 0 2px 10px; }
+#example-line small { display: block; color: var(--muted); font-size: 12.5px; }
+#fallback { display: block; width: 100%; height: 120px; margin: 0 0 12px; font: 12px var(--mono); }
+#fallback[hidden], #example-line[hidden] { display: none; }
+figure { margin: 6px 0 0; }
 .scroll { overflow-x: auto; }
 .scroll svg { display: block; width: 100%; min-width: 1180px; height: auto; }
 [data-block], [data-fx] { cursor: pointer; }
@@ -107,7 +142,7 @@ figcaption { color: var(--muted); font-size: 13px; margin-top: 10px; max-width: 
 code { font-family: var(--mono); font-size: 0.9em; }
 
 /* Data and model-call pages */
-.page { margin-top: 20px; display: grid; gap: 18px; }
+.page { margin-top: 6px; display: grid; gap: 18px; }
 .page > p { margin: 0; color: var(--muted); max-width: 84ch; }
 .entity { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
 .entity header { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
@@ -155,43 +190,66 @@ tr.clickable:hover td { background: var(--seg); }
 #card a { color: var(--accent); }
 </style>
 
-<header class="wrap">
-  <h1 id="title"></h1>
-  <p id="fresh"></p>
-  <div class="actions">
+<header class="top">
+  <div class="wrap titlebar">
+    <svg class="mark" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+      <rect x="1" y="1" width="12" height="12" fill="#1c4098"/><circle cx="18" cy="9" r="7" fill="#d6301f"/><path d="M4 25 L12 12 L20 25 Z" fill="#f2be22"/>
+    </svg>
+    <h1 id="title"></h1>
+    <details class="pop" id="sync">
+      <summary class="status" id="sync-chip"></summary>
+      <div class="panel" id="sync-panel"></div>
+    </details>
+  </div>
+</header>
+
+<nav class="bar" aria-label="Views and controls">
+  <div class="wrap bar-row">
     <div class="tabs" role="tablist" aria-label="View">
       <button role="tab" id="tab-overview" type="button">Overview</button>
       <button role="tab" id="tab-detailed" type="button">Detailed</button>
       <button role="tab" id="tab-data" type="button">Data</button>
       <button role="tab" id="tab-models" type="button">Model calls</button>
-      <button role="tab" id="tab-risks" type="button">Risks</button>
+      <button role="tab" id="tab-risks" type="button">Risks<span class="count" id="risk-count"></span></button>
     </div>
-    <button id="copy" class="plain" type="button">Copy SVG for Figma</button>
-    <label id="example-pick" class="pick" hidden>Example run <select id="example"></select></label>
-    <span id="status" role="status"></span>
+    <div class="bar-actions">
+      <span id="status" role="status"></span>
+      <details class="pop" id="legend-pop">
+        <summary class="ghost">Legend</summary>
+        <div class="panel legend" id="legend"></div>
+      </details>
+      <button id="copy" class="ghost" type="button" title="Copies this diagram as SVG; paste it into Figma as editable shapes">Copy SVG</button>
+    </div>
   </div>
-  <p id="example-line" hidden></p>
-  <textarea id="fallback" hidden readonly aria-label="SVG markup"></textarea>
-  <div class="toolbar" id="toolbar" hidden>
-    <label>Block <select id="only"></select></label>
-    <span class="chips" id="paths" role="group" aria-label="Paths">
-      <button type="button" data-paths="all" aria-pressed="true">All paths</button>
-      <button type="button" data-paths="main" aria-pressed="false">Main path</button>
-      <button type="button" data-paths="failures" aria-pressed="false">Failures</button>
-    </span>
-    <span class="chips" id="kinds" role="group" aria-label="Highlight calls">
-      <button type="button" data-kind="" aria-pressed="true">All</button>
-      <button type="button" data-kind="LLM" aria-pressed="false">LLM</button>
-      <button type="button" data-kind="API" aria-pressed="false">API</button>
-      <button type="button" data-kind="DB" aria-pressed="false">Database</button>
-    </span>
-    <label>Table or field <input id="find" type="search" list="entities" placeholder="a table or a field" autocomplete="off"></label>
-    <datalist id="entities"></datalist>
+  <div class="wrap toolbar" id="toolbar" hidden>
+    <div class="group" id="grp-block"><span class="glabel">Block</span><select id="only" aria-label="Block"></select></div>
+    <div class="group" id="grp-paths"><span class="glabel">Paths</span>
+      <span class="chips" id="paths" role="group" aria-label="Paths">
+        <button type="button" data-paths="all" aria-pressed="true">All</button>
+        <button type="button" data-paths="main" aria-pressed="false">Main path</button>
+        <button type="button" data-paths="failures" aria-pressed="false">Failures</button>
+      </span>
+    </div>
+    <div class="group" id="grp-kinds"><span class="glabel">Highlight</span>
+      <span class="chips" id="kinds" role="group" aria-label="Highlight calls">
+        <button type="button" data-kind="" aria-pressed="true">All</button>
+        <button type="button" data-kind="LLM" aria-pressed="false">LLM</button>
+        <button type="button" data-kind="API" aria-pressed="false">API</button>
+        <button type="button" data-kind="DB" aria-pressed="false">Database</button>
+      </span>
+      <input id="find" type="search" list="entities" placeholder="Table or field" aria-label="Highlight a table or field" autocomplete="off">
+      <datalist id="entities"></datalist>
+    </div>
+    <div class="group" id="example-pick" hidden><span class="glabel">Example run</span><select id="example" aria-label="Example run"></select></div>
   </div>
-</header>
+</nav>
 
 <main>
-  <figure id="figure">
+  <div class="wrap lead">
+    <p id="example-line" hidden></p>
+    <textarea id="fallback" hidden readonly aria-label="SVG markup"></textarea>
+  </div>
+  <figure id="figure" class="wrap">
     <div class="scroll" id="diagram"></div>
     <figcaption id="caption"></figcaption>
   </figure>
@@ -421,6 +479,37 @@ function legendRow(R, items, y) {
   return { svg: out.join(''), bottom: y + 16 };
 }
 
+function legendItems(view, R) {
+  if (view === 'overview') {
+    return [
+      ...['LLM', 'API', 'READ', 'WRITE', 'CODE', 'IF', 'PERSON', 'IN', 'OUT'].map(tag => ({ tag, label: TAGS[tag].label })),
+      { glyph: shapeGlyph(R, 'decision'), label: 'decision that changes the path' },
+      { glyph: shapeGlyph(R, 'side'), label: 'branch off the main path' },
+      { glyph: shapeGlyph(R, 'start'), label: 'where work starts' },
+    ];
+  }
+  return [
+    ...['TASK', 'LLM', 'API', 'READ', 'WRITE', 'LOCK', 'PARALLEL', 'RISK', ...(example() ? ['RUN'] : [])].map(tag => ({ tag, label: TAGS[tag].label })),
+    { glyph: shapeGlyph(R, 'decision'), label: 'condition' },
+    { glyph: shapeGlyph(R, 'model'), label: 'decided by the model' },
+    { glyph: shapeGlyph(R, 'loop'), label: 'loop' },
+    { glyph: shapeGlyph(R, 'faded'), label: 'off the main path' },
+    { glyph: shapeGlyph(R, 'failure'), label: 'on failure' },
+    { glyph: shapeGlyph(R, 'write'), label: 'data goes out' },
+    { glyph: shapeGlyph(R, 'read'), label: 'data comes back' },
+    { glyph: shapeGlyph(R, 'call'), label: 'request and answer' },
+  ];
+}
+
+function legendHTML(view) {
+  const R = painter('page');
+  return legendItems(view, R).map(item => {
+    const w = item.tag ? TAG_W : 26;
+    const glyph = item.tag ? R.tag(0, 0.5, item.tag) : item.glyph(0, 0);
+    return `<span class="lg"><svg width="${w}" height="17" viewBox="0 0 ${w} 17" aria-hidden="true">${glyph}</svg>${esc(item.label)}</span>`;
+  }).join('');
+}
+
 function shapeGlyph(R, shape) {
   return (x, y) => {
     if (shape === 'decision' || shape === 'model') {
@@ -516,15 +605,14 @@ function buildOverview(mode) {
   const widest = Math.max(0, ...SPEC.bands.map(band => band.main.reduce((a, id) => a + (SPEC.nodes[id].w || SIZES[SPEC.nodes[id].kind] || SIZES.block), 0) + (band.main.length - 1) * MIN_GAP));
   const CW = Math.max(CONTENT_W, widest);
   const OW = CW + 2 * (M + PAD);
-  const head = [R.text(M, 38, SPEC.title, { size: 20, weight: 600 }), R.text(M, 60, metaLine(), { size: 12, color: 'muted' })];
-  const legend = legendRow(R, [
-    ...['LLM', 'API', 'READ', 'WRITE', 'CODE', 'IF', 'PERSON', 'IN', 'OUT'].map(tag => ({ tag, label: TAGS[tag].label })),
-    { glyph: shapeGlyph(R, 'decision'), label: 'decision that changes the path' },
-    { glyph: shapeGlyph(R, 'side'), label: 'branch off the main path' },
-    { glyph: shapeGlyph(R, 'start'), label: 'where work starts' },
-  ], 84);
-  head.push(legend.svg);
-  let y = legend.bottom + 26;
+  const head = [];
+  let y = 8;
+  if (mode === 'export') {
+    head.push(R.text(M, 38, SPEC.title, { size: 20, weight: 600 }), R.text(M, 60, metaLine(), { size: 12, color: 'muted' }));
+    const legend = legendRow(R, legendItems('overview', R), 84);
+    head.push(legend.svg);
+    y = legend.bottom + 26;
+  }
 
   const stretches = kind => kind === 'block' || kind === 'person' || kind === 'output';
   const changedIds = new Set(Object.keys(CHECK.blocks || {}).filter(id => (CHECK.blocks[id].changed || []).length));
@@ -863,20 +951,14 @@ function layoutRows(rows, prefix, depth, path, ctx) {
 function buildDetailed(mode, only) {
   const R = painter(mode);
   const ids = only ? [only] : ORDER;
-  const out = [R.text(M, 38, only ? blockLabel(only) : `${SPEC.title}, in detail`, { size: 20, weight: 600 }), R.text(M, 60, metaLine(), { size: 12, color: 'muted' })];
-  const legend = legendRow(R, [
-    ...['TASK', 'LLM', 'API', 'READ', 'WRITE', 'LOCK', 'PARALLEL', 'RISK', ...(example() ? ['RUN'] : [])].map(tag => ({ tag, label: TAGS[tag].label })),
-    { glyph: shapeGlyph(R, 'decision'), label: 'condition' },
-    { glyph: shapeGlyph(R, 'model'), label: 'decided by the model' },
-    { glyph: shapeGlyph(R, 'loop'), label: 'loop' },
-    { glyph: shapeGlyph(R, 'faded'), label: 'off the main path' },
-    { glyph: shapeGlyph(R, 'failure'), label: 'on failure' },
-    { glyph: shapeGlyph(R, 'write'), label: 'data goes out' },
-    { glyph: shapeGlyph(R, 'read'), label: 'data comes back' },
-    { glyph: shapeGlyph(R, 'call'), label: 'request and answer' },
-  ], 84);
-  out.push(legend.svg);
-  let y = legend.bottom + 26;
+  const out = [];
+  let y = 8;
+  if (mode === 'export') {
+    out.push(R.text(M, 38, only ? blockLabel(only) : `${SPEC.title}, in detail`, { size: 20, weight: 600 }), R.text(M, 60, metaLine(), { size: 12, color: 'muted' }));
+    const legend = legendRow(R, legendItems('detailed', R), 84);
+    out.push(legend.svg);
+    y = legend.bottom + 26;
+  }
 
   ids.forEach(id => {
     const n = SPEC.nodes[id];
@@ -973,7 +1055,7 @@ function buildDataPage() {
   }));
   const list = Object.values(ents).sort((a, b) => (b.reads + b.writes) - (a.reads + a.writes));
   const blockNum = id => (SPEC.nodes[id].num ? String(SPEC.nodes[id].num).padStart(2, '0') : '·');
-  return `<p>Every table, store and file the agent reads or writes, the status values it moves through, and the steps that touch it. Status values run in the order the main path sets them; the numbers are the blocks that set them.</p>`
+  return `<p>Every table and store the agent touches. Status values run in the order the main path sets them; the small numbers are the blocks that set them.</p>`
     + list.map(e => `<section class="entity">`
       + `<header><h3>${esc(e.name)}</h3><span class="count">${e.writes} write${e.writes === 1 ? '' : 's'} · ${e.reads} read${e.reads === 1 ? '' : 's'}</span>`
       + `<button class="plain" type="button" data-show-entity="${esc(e.name)}">Show in the detailed view</button></header>`
@@ -1011,7 +1093,7 @@ function buildModelsPage() {
     return `<td class="num">${c ? `${fmtInt(c.count)}${c.cost_usd != null ? ` · $${Number(c.cost_usd).toFixed(4)}` : ''}` : '0'}</td>`;
   };
   const runTotal = runCalls ? Object.values(runCalls).reduce((a, c) => ({ count: a.count + (c.count || 0), cost: a.cost + (c.cost_usd || 0) }), { count: 0, cost: 0 }) : null;
-  return `<p>Every model call, grouped by the unit of work it runs for. Usage numbers are averages per call from the usage log; when they were measured on an earlier model, the table says which. Click a row for the prompt, the output schema and the call site.</p>`
+  return `<p>Every model call, by the unit of work it runs for. Usage numbers are averages per call from your usage log. Click a row for its prompt and output schema.</p>`
     + (runTotal ? `<p>The example run made ${fmtInt(runTotal.count)} model calls for about $${runTotal.cost.toFixed(3)}; the "This run" column shows how many of each, and what they cost.</p>` : '')
     + units.map(unit => `<div class="unit"><h3>For each ${esc(unit)}</h3><div class="tablewrap"><table><thead><tr>`
       + `<th>Block</th><th>Called from</th><th>Model</th><th>How often</th><th>Rule on the answer</th><th>Tokens in / out</th><th>Cost</th><th>Median time</th>${runCalls ? '<th>This run</th>' : ''}</tr></thead><tbody>`
@@ -1022,7 +1104,7 @@ function buildModelsPage() {
 }
 
 function buildRisksPage() {
-  return `<p>Problems noticed while tracing the code: things that can go wrong, paths that never run, work that costs more than it should. Each one sits on the row it belongs to in the detailed view; click the step to open its code.</p>`
+  return `<p>Problems noticed while tracing the code. Each one also sits on its row in the detailed view; click a step to open its code.</p>`
     + `<div class="tablewrap"><table><thead><tr><th>Block</th><th>Step</th><th>Risk</th></tr></thead><tbody>`
     + RISKS.map(item => {
       const href = codeLink(item.row.at, item.key);
@@ -1094,36 +1176,56 @@ function closeCard() {
   if (lastFocus && lastFocus.focus) lastFocus.focus();
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('card').hidden) closeCard(); });
+// Popovers (status, legend) close on Escape or a click elsewhere.
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('details.pop[open]').forEach(d => d.removeAttribute('open')); });
+document.addEventListener('click', e => { document.querySelectorAll('details.pop[open]').forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
 
 // ── Page ────────────────────────────────────────────────────────────────────
 function metaLine() {
   const d = SPEC.drawn_at || {};
   return `Traced at commit ${d.commit || '?'}, ${d.date || ''}. File paths are under ${SPEC.repo.code_root}/.`;
 }
-function freshHTML() {
+// The status chip says in a few words whether the diagram still matches the code; its panel has the details.
+function syncChip() {
   const s = CHECK.summary;
-  if (!s) return 'Not checked against the code. Run <code>bauplan.py check</code>.';
-  const parts = [`<span class="ok">${s.counts.ok} rows found</span>`];
-  if (s.counts.moved) parts.push(`<span class="warn">${s.counts.moved} moved</span>`);
-  if (s.counts.missing) parts.push(`<span class="bad">${s.counts.missing} not found</span>`);
-  if (s.counts.unchecked) parts.push(`${s.counts.unchecked} without a line to check`);
-  let text = `Checked against the code at <b>${esc(s.head)}</b> on ${esc(s.checked_at)}: ${parts.join(' · ')}.`;
-  if (s.prompts_missing && s.prompts_missing.length) text += ` <span class="bad">Missing prompts: ${esc(s.prompts_missing.join(', '))}.</span>`;
-  const changed = s.changed_blocks || [];
-  text += changed.length
-    ? ` <span class="warn">Changed since it was drawn at ${esc(s.drawn_commit)}: ${esc(changed.map(blockLabel).join(', '))}.</span>`
-    : ` Nothing it covers has changed since it was drawn at ${esc(s.drawn_commit)}.`;
-  if (RISKS.length) text += ` <span class="warn">${RISKS.length} risk${RISKS.length === 1 ? '' : 's'} noted while tracing.</span>`;
-  Object.entries(s.examples_stale || {}).forEach(([id, keys]) => {
-    const item = EXAMPLES.find(e => e.id === id);
-    text += ` <span class="warn">The example “${esc(item ? item.name : id)}” refers to ${keys.length} step${keys.length === 1 ? '' : 's'} that are no longer in the diagram.</span>`;
-  });
-  return text;
+  if (!s) return { cls: 'none', html: 'Not checked against the code' };
+  const commit = `<code>${esc(String(s.head).split(' ')[0])}</code>`;
+  const changed = (s.changed_blocks || []).length;
+  if (s.counts.missing) return { cls: 'bad', html: `${s.counts.missing} row${s.counts.missing === 1 ? '' : 's'} not found ${commit}` };
+  if (changed) return { cls: 'warn', html: `${changed} block${changed === 1 ? '' : 's'} changed since drawn ${commit}` };
+  if (s.counts.moved) return { cls: 'warn', html: `${s.counts.moved} row${s.counts.moved === 1 ? '' : 's'} moved ${commit}` };
+  return { cls: '', html: `In sync with the code ${commit}` };
+}
+function syncPanel() {
+  const s = CHECK.summary;
+  const d = SPEC.drawn_at || {};
+  const rows = [];
+  const add = (k, v) => rows.push(`<dt>${esc(k)}</dt><dd>${v}</dd>`);
+  if (!s) {
+    add('Checked', 'Not yet. Run <code>bauplan.py check</code> beside the code.');
+  } else {
+    add('Checked', `${esc(s.checked_at)}, at <code>${esc(s.head)}</code>`);
+    const counts = [`${s.counts.ok} found`];
+    if (s.counts.moved) counts.push(`<span class="warn">${s.counts.moved} moved</span>`);
+    if (s.counts.missing) counts.push(`<span class="bad">${s.counts.missing} not found</span>`);
+    if (s.counts.unchecked) counts.push(`${s.counts.unchecked} without a line to check`);
+    add('Rows', counts.join(' · '));
+    const changed = s.changed_blocks || [];
+    add('Changed since drawn', changed.length ? `<span class="warn">${esc(changed.map(blockLabel).join(', '))}</span>` : 'nothing');
+    if ((s.prompts_missing || []).length) add('Missing prompts', `<span class="bad">${esc(s.prompts_missing.join(', '))}</span>`);
+    Object.entries(s.examples_stale || {}).forEach(([id, keys]) => {
+      const item = EXAMPLES.find(e => e.id === id);
+      add('Stale example', `<span class="warn">${esc(item ? item.name : id)}: ${keys.length} step${keys.length === 1 ? '' : 's'} no longer in the diagram</span>`);
+    });
+  }
+  add('Drawn at', `<code>${esc(d.commit || '?')}</code>${d.date ? `, ${esc(d.date)}` : ''}`);
+  add('Code', `paths are under <code>${esc(SPEC.repo.code_root || '.')}/</code>`);
+  return `<dl>${rows.join('')}</dl><p class="made">Drawn with <a href="https://github.com/Sailaukan/bauplan" target="_blank" rel="noopener">Bauplan</a>.</p>`;
 }
 
 const CAPTIONS = {
-  overview: 'Blocks are numbered in the order work happens; dashed boxes branch off the main path. Click a block that has details to open them.',
-  detailed: 'Rows run top to bottom in the order the code runs; an indented row is called from the row above it, or runs inside the condition or loop above it. Click a function to open its code, or a call to see its details.',
+  overview: 'Click a block to open its functions.',
+  detailed: 'Rows run in the order the code runs; an indented row is called from, or runs inside, the row above. Click a function to open its code, or a call for its prompt, schema and usage.',
 };
 // #detailed, #data and #models open a view; #<node id> opens that block's details, so a block can be linked.
 const HASH = location.hash.slice(1);
@@ -1153,13 +1255,25 @@ function applyHighlight() {
 
 function render() {
   document.getElementById('title').textContent = SPEC.title;
-  document.getElementById('fresh').innerHTML = freshHTML();
+  const chip = syncChip();
+  const chipEl = document.getElementById('sync-chip');
+  chipEl.className = `status ${chip.cls}`;
+  chipEl.innerHTML = `<span class="dot"></span>${chip.html}`;
+  document.getElementById('sync-panel').innerHTML = syncPanel();
+  const riskCount = document.getElementById('risk-count');
+  riskCount.textContent = RISKS.length ? String(RISKS.length) : '';
+  riskCount.hidden = !RISKS.length;
   const svgView = view === 'overview' || view === 'detailed';
   document.getElementById('figure').hidden = !svgView;
   document.getElementById('page').hidden = svgView;
   document.getElementById('copy').hidden = !svgView;
-  document.getElementById('toolbar').hidden = view !== 'detailed';
-  document.getElementById('example-pick').hidden = !EXAMPLES.length || !['detailed', 'models'].includes(view);
+  document.getElementById('legend-pop').hidden = !svgView;
+  if (svgView) document.getElementById('legend').innerHTML = legendHTML(view);
+  // The toolbar holds only what this view uses: block, paths and highlight on Detailed; example runs on Detailed and Model calls.
+  const exampleShown = EXAMPLES.length > 0 && ['detailed', 'models'].includes(view);
+  ['grp-block', 'grp-paths', 'grp-kinds'].forEach(id => { document.getElementById(id).hidden = view !== 'detailed'; });
+  document.getElementById('example-pick').hidden = !exampleShown;
+  document.getElementById('toolbar').hidden = view !== 'detailed' && !exampleShown;
   const ex = example();
   const line = document.getElementById('example-line');
   line.hidden = !ex || !['detailed', 'models'].includes(view);
