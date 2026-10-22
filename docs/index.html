@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}</style>
+<title>Support Agent Workflow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a header with the freshness line and view switch; one wide diagram (or a data page) below; a card drawer on the right. */
+:root {
+  --bg: #f5f6f8;
+  --fg: #141b26;
+  --muted: #556173;
+  --faint: #7d8899;
+  --rule: #d5dbe3;
+  --panel: #ffffff;
+  --accent: #2257d6;
+  --btn: #141b26;
+  --btn-fg: #ffffff;
+  --seg: #e6e9ee;
+  --ok: #15803d;
+  --warn: #b45309;
+  --bad: #c62828;
+  --llm: #c2610a;
+  --api: #0e7c72;
+  --data: #15803d;
+  --run: #2257d6;
+  --font: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1216; --fg: #e5e9ef; --muted: #9ba6b5; --faint: #727d8c; --rule: #262d37; --panel: #1c2129; --accent: #6d9bff;
+    --btn: #e5e9ef; --btn-fg: #0f1216; --seg: #1c2129; --ok: #41c26c; --warn: #f2a33a; --bad: #f26d6d;
+    --llm: #f08c35; --api: #2ab5a6; --data: #41c26c; --run: #6d9bff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1216; --fg: #e5e9ef; --muted: #9ba6b5; --faint: #727d8c; --rule: #262d37; --panel: #1c2129; --accent: #6d9bff;
+  --btn: #e5e9ef; --btn-fg: #0f1216; --seg: #1c2129; --ok: #41c26c; --warn: #f2a33a; --bad: #f26d6d;
+  --llm: #f08c35; --api: #2ab5a6; --data: #41c26c; --run: #6d9bff;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1340px; margin: 0 auto; }
+h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+#fresh { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 110ch; }
+#fresh b { font-weight: 600; }
+#fresh .warn { color: var(--warn); }
+#fresh .bad { color: var(--bad); }
+#fresh .ok { color: var(--ok); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
+.tabs { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 3px; border-radius: 8px; background: var(--seg); }
+.tabs button, .chips button {
+  font: 500 14px/1 var(--font);
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tabs button[aria-selected="true"], .chips button[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
+.plain {
+  font: 500 14px/1 var(--font);
+  padding: 9px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, [data-block]:focus-visible, [data-fx]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+#status { color: var(--muted); font-size: 13px; }
+.pick { display: inline-flex; gap: 8px; align-items: center; font-size: 13.5px; color: var(--muted); }
+.pick select { font: 14px var(--font); color: var(--fg); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 9px; max-width: 100%; }
+#example-line { margin: 12px 0 0; max-width: 110ch; font-size: 13.5px; color: var(--fg); border-left: 3px solid var(--run); padding: 2px 0 2px 10px; }
+#example-line small { display: block; color: var(--muted); font-size: 12.5px; }
+#fallback { display: block; width: 100%; height: 120px; margin-top: 12px; font: 12px var(--mono); }
+#fallback[hidden] { display: none; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 16px; font-size: 13.5px; color: var(--muted); }
+.toolbar label { display: inline-flex; gap: 8px; align-items: center; }
+.toolbar select, .toolbar input {
+  font: 14px var(--font); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 7px 9px; min-width: 0;
+}
+.chips { display: inline-flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: 8px; background: var(--seg); }
+.chips button { padding: 7px 11px; font-size: 13px; }
+figure { margin: 20px auto 0; max-width: 1340px; }
+.scroll { overflow-x: auto; }
+.scroll svg { display: block; width: 100%; min-width: 1180px; height: auto; }
+[data-block], [data-fx] { cursor: pointer; }
+[data-block]:hover > rect:first-child, [data-fx]:hover rect.cell { stroke: var(--accent); stroke-width: 2px; }
+svg.filtering [data-fx]:not(.hl) { opacity: 0.14; }
+svg.filtering [data-fx].hl rect.cell { stroke-width: 2.5px; }
+figcaption { color: var(--muted); font-size: 13px; margin-top: 10px; max-width: 84ch; }
+code { font-family: var(--mono); font-size: 0.9em; }
+
+/* Data and model-call pages */
+.page { margin-top: 20px; display: grid; gap: 18px; }
+.page > p { margin: 0; color: var(--muted); max-width: 84ch; }
+.entity { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.entity header { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
+.entity h3 { margin: 0; font: 600 16px/1.3 var(--mono); }
+.entity .count { color: var(--muted); font-size: 13px; }
+.entity header .plain { margin-left: auto; padding: 6px 10px; font-size: 13px; }
+.life { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.life .field { font-family: var(--mono); color: var(--muted); margin-right: 4px; }
+.life .chip { display: inline-flex; gap: 6px; align-items: baseline; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--data); font-family: var(--mono); font-size: 12.5px; }
+.life .chip small { color: var(--faint); font-family: var(--font); font-size: 11px; }
+.life .sep { color: var(--faint); }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); }
+td { padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.mono, .mono { font-family: var(--mono); font-size: 12px; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.clickable { cursor: pointer; }
+.page a { color: var(--accent); }
+tr.clickable:hover td { background: var(--seg); }
+.tag { display: inline-block; font: 600 10px/1 var(--font); letter-spacing: 0.06em; padding: 3px 6px; border-radius: 3px; border: 1px solid currentColor; }
+.tag.LLM { color: var(--llm); } .tag.API { color: var(--api); } .tag.READ, .tag.WRITE { color: var(--data); }
+.unit h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+
+/* Card drawer */
+#card {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 20;
+  width: min(520px, 100vw);
+  background: var(--panel); color: var(--fg);
+  border-left: 1px solid var(--rule);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.12);
+  overflow-y: auto;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) 20px;
+  display: grid; align-content: start; gap: 14px;
+}
+#card[hidden] { display: none; }
+#card .top { display: flex; gap: 10px; align-items: center; }
+#card h2 { margin: 0; font-size: 18px; font-weight: 600; flex: 1; min-width: 0; }
+#card dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 13.5px; }
+#card dt { color: var(--muted); }
+#card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+#card h3 { margin: 6px 0 0; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+#card pre { margin: 0; padding: 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--rule); font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow-y: auto; }
+#card ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+#card a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1 id="title"></h1>
+  <p id="fresh"></p>
+  <div class="actions">
+    <div class="tabs" role="tablist" aria-label="View">
+      <button role="tab" id="tab-overview" type="button">Overview</button>
+      <button role="tab" id="tab-detailed" type="button">Detailed</button>
+      <button role="tab" id="tab-data" type="button">Data</button>
+      <button role="tab" id="tab-models" type="button">Model calls</button>
+      <button role="tab" id="tab-risks" type="button">Risks</button>
+    </div>
+    <button id="copy" class="plain" type="button">Copy SVG for Figma</button>
+    <label id="example-pick" class="pick" hidden>Example run <select id="example"></select></label>
+    <span id="status" role="status"></span>
+  </div>
+  <p id="example-line" hidden></p>
+  <textarea id="fallback" hidden readonly aria-label="SVG markup"></textarea>
+  <div class="toolbar" id="toolbar" hidden>
+    <label>Block <select id="only"></select></label>
+    <span class="chips" id="paths" role="group" aria-label="Paths">
+      <button type="button" data-paths="all" aria-pressed="true">All paths</button>
+      <button type="button" data-paths="main" aria-pressed="false">Main path</button>
+      <button type="button" data-paths="failures" aria-pressed="false">Failures</button>
+    </span>
+    <span class="chips" id="kinds" role="group" aria-label="Highlight calls">
+      <button type="button" data-kind="" aria-pressed="true">All</button>
+      <button type="button" data-kind="LLM" aria-pressed="false">LLM</button>
+      <button type="button" data-kind="API" aria-pressed="false">API</button>
+      <button type="button" data-kind="DB" aria-pressed="false">Database</button>
+    </span>
+    <label>Table or field <input id="find" type="search" list="entities" placeholder="a table or a field" autocomplete="off"></label>
+    <datalist id="entities"></datalist>
+  </div>
+</header>
+
+<main>
+  <figure id="figure">
+    <div class="scroll" id="diagram"></div>
+    <figcaption id="caption"></figcaption>
+  </figure>
+  <section class="wrap page" id="page" hidden></section>
+</main>
+
+<aside id="card" hidden aria-label="Call details"></aside>
+
+<script>
+const DATA = {"spec": {"title": "Support agent: ticket to reply", "repo": {"code_root": "src", "prompts_root": "prompts", "link": "https://github.com/your-org/support-agent/blob/{commit}/{path}#L{line}"}, "drawn_at": {"commit": "4f2c9e1", "date": "2026-10-21"}, "bands": [{"title": "Each ticket", "note": "One queued job per new ticket.", "main": ["webhook", "receive", "classify", "isHuman", "draft", "send"], "side": [{"id": "escalate", "under": "isHuman"}]}, {"title": "Each sent reply", "note": "Runs after the customer's next message, or after 3 days.", "main": ["outcome", "learn", "done"]}], "nodes": {"webhook": {"kind": "trigger", "title": "Helpdesk webhook", "note": "a customer opens a ticket"}, "receive": {"kind": "block", "num": 1, "title": "Receive the ticket", "items": [["IN", "ticket id from the webhook"], ["API", "Zendesk: ticket, customer, history"], ["WRITE", "Ticket, status received"]], "file": "webhooks/zendesk.ts", "handoff": {"data": "ticket id", "state": "Ticket status received"}, "detail": [{"t": "fn", "fn": "POST /webhooks/zendesk → handleTicketCreated(req)", "at": "webhooks/zendesk.ts:18", "note": "Checks the signature, then answers 200 at once.", "calls": [{"t": "if", "cond": "Signature does not match", "at": "webhooks/zendesk.ts:21", "match": "verifySignature", "then": "answer 401", "side": "yes"}, {"t": "fn", "fn": "fetchTicket(ticketId)", "returns": "Ticket", "at": "integrations/zendesk.ts:40", "fx": [{"tag": "API", "title": "Zendesk", "method": "GET", "endpoint": "/api/v2/tickets/{id}?include=users,comments", "text": "ticket, requester, earlier comments"}]}, {"t": "do", "title": "Store the ticket", "at": "webhooks/zendesk.ts:30", "match": "db.ticket.upsert", "fx": [{"tag": "WRITE", "title": "Ticket", "fields": ["external_id", "subject", "body", "customer_id"], "sets": {"status": "received"}}]}, {"t": "do", "title": "Queue the ticket", "at": "webhooks/zendesk.ts:34", "match": "queue.add('ticket'"}]}]}, "classify": {"kind": "block", "num": 2, "title": "Classify the ticket", "items": [["READ", "Customer plan and open orders"], ["LLM", "Claude Haiku: category, urgency"], ["WRITE", "Ticket category, urgency"]], "file": "agents/classify.ts", "handoff": {"data": "ticket id and label", "state": "Ticket status classified"}, "detail": [{"t": "task", "name": "ticket job (BullMQ queue 'ticket')", "note": "One job per ticket.", "retries": "3 times with exponential backoff"}, {"t": "fn", "fn": "classifyTicket(ticket)", "returns": "TicketLabel", "at": "agents/classify.ts:12", "fx": [{"tag": "READ", "title": "Customer", "text": "plan and open orders", "fields": ["plan", "orders"]}], "calls": [{"t": "fn", "fn": "callModel({ model: FAST_MODEL, prompt: 'classify.md', schema: TicketLabel })", "returns": "TicketLabel", "at": "llm/client.ts:25", "match": "export async function callModel", "note": "Retries twice, then falls back to the larger model.", "fx": [{"tag": "LLM", "title": "Claude Haiku 5.5", "model": "claude-haiku-5-5", "prompt": "classify.md", "feature": "ticket_classify", "unit": "ticket", "times": "1", "threshold": "confidence ≥ 0.7, else category other", "fallbacks": ["claude-sonnet-5-5"], "schema": {"name": "TicketLabel", "fields": ["category: billing | bug | how_to | other", "urgent: bool", "confidence: float 0–1"]}, "in": "subject, body, plan, last 3 comments", "out": "category, urgent, confidence"}, {"tag": "WRITE", "title": "LlmCall", "text": "tokens, cost, latency", "fields": ["model", "input_tokens", "output_tokens", "cost_usd"]}]}, {"t": "do", "title": "Save the label", "at": "agents/classify.ts:31", "match": "db.ticket.update", "fx": [{"tag": "WRITE", "title": "Ticket", "fields": ["category", "urgent", "label_confidence"], "sets": {"status": "classified"}}]}]}]}, "isHuman": {"kind": "decision", "title": "Urgent, or asks for a refund over $200?"}, "escalate": {"kind": "side", "title": "Hand to a person", "items": [["API", "Zendesk: assign to the on-call group"], ["WRITE", "Ticket status escalated"]], "file": "agents/escalate.ts"}, "draft": {"kind": "block", "num": 3, "title": "Draft a reply with tools", "items": [["LLM", "Claude Sonnet, up to 8 turns"], ["CODE", "the model picks tools"], ["READ", "docs search, orders"], ["API", "Stripe refunds under $200"], ["OUT", "draft reply"]], "file": "agents/reply.ts", "handoff": {"data": "draft reply", "state": "Ticket status drafted"}, "detail": [{"t": "fn", "fn": "draftReply(ticket, label)", "returns": "Draft", "at": "agents/reply.ts:22", "calls": [{"t": "each", "until": "the model answers without a tool call, at most 8 turns", "at": "agents/reply.ts:41", "match": "for (let turn", "calls": [{"t": "fn", "fn": "client.messages.create({ model, system, messages, tools })", "at": "agents/reply.ts:43", "match": "messages.create", "fx": [{"tag": "LLM", "title": "Claude Sonnet 5.5", "model": "claude-sonnet-5-5", "prompt": "reply-system.md", "feature": "ticket_reply_turn", "unit": "ticket", "times": "1 per turn, at most 8", "in": "ticket, label, tool results so far", "out": "text, or tool calls"}]}, {"t": "switch", "on": "What the model asked for", "decided_by": "model", "at": "agents/reply.ts:52", "match": "switch (block.name)", "cases": [{"when": "search_docs(query)", "rows": [{"t": "fn", "fn": "searchDocs(query, k = 6)", "returns": "Chunk[]", "at": "tools/search.ts:12", "fx": [{"tag": "LLM", "title": "OpenAI embeddings", "model": "text-embedding-3-small", "prompt": "inline", "feature": "docs_embed_query", "unit": "ticket", "times": "0–8"}, {"tag": "READ", "title": "pgvector: doc_chunks", "text": "6 nearest chunks", "fields": ["embedding", "text", "url"]}]}]}, {"when": "lookup_order(order_id)", "rows": [{"t": "fn", "fn": "lookupOrder(orderId)", "returns": "Order", "at": "tools/orders.ts:8", "fx": [{"tag": "READ", "title": "Order", "fields": ["status", "total", "shipped_at"]}]}]}, {"when": "refund_order(order_id, amount)", "side": true, "rows": [{"t": "if", "cond": "Amount over $200", "at": "tools/billing.ts:19", "match": "amount > REFUND_LIMIT", "then": "refuse; the model is told to escalate", "side": "yes"}, {"t": "fn", "fn": "refundOrder(orderId, amount)", "at": "tools/billing.ts:30", "lock": "Redis lock refund:{orderId}, 30 s", "risks": ["The $200 limit is only enforced inside the tool; the prompt never states it, so the model can promise a refund before the tool refuses."], "fx": [{"tag": "API", "title": "Stripe", "method": "POST", "endpoint": "/v1/refunds"}, {"tag": "WRITE", "title": "Order", "fields": ["refunded_amount"], "sets": {"refund_status": "refunded"}}]}]}, {"when": "no tool call: the answer", "rows": [{"t": "end", "text": "leave the loop with the draft"}]}]}]}, {"t": "if", "cond": "8 turns used without an answer, or the model API errors twice", "at": "agents/reply.ts:70", "match": "turn === MAX_TURNS", "then": "hand the ticket to a person", "fail": "yes"}, {"t": "do", "title": "Save the draft", "at": "agents/reply.ts:76", "match": "db.draft.create", "fx": [{"tag": "WRITE", "title": "Draft", "fields": ["ticket_id", "body", "tool_calls"]}, {"tag": "WRITE", "title": "Ticket", "fields": ["status"], "sets": {"status": "drafted"}}]}]}]}, "send": {"kind": "block", "num": 4, "title": "Send the reply", "items": [["IF", "auto-send when confidence ≥ 0.9"], ["PERSON", "else an agent approves or edits"], ["API", "Zendesk: public comment"], ["WRITE", "Ticket status sent"]], "file": "agents/send.ts", "handoff": {"data": "sent reply", "state": "Ticket status sent"}, "detail": [{"t": "if", "cond": "Label confidence ≥ 0.9 and no refund in the draft", "at": "agents/send.ts:15", "match": "AUTO_SEND_CONFIDENCE", "side": "no", "yes": [{"t": "end", "text": "send now"}], "no": [{"t": "do", "title": "Wait for a person to approve or edit", "at": "agents/send.ts:20", "match": "status: 'awaiting_review'", "fx": [{"tag": "WRITE", "title": "Ticket", "fields": ["status"], "sets": {"status": "awaiting_review"}}]}]}, {"t": "fn", "fn": "postReply(ticket, draft)", "at": "integrations/zendesk.ts:72", "fx": [{"tag": "API", "title": "Zendesk", "method": "PUT", "endpoint": "/api/v2/tickets/{id}", "text": "public comment"}, {"tag": "WRITE", "title": "Ticket", "fields": ["status", "sent_at"], "sets": {"status": "sent"}}]}]}, "outcome": {"kind": "block", "num": 5, "title": "Judge the outcome", "items": [["IN", "the customer's next message"], ["LLM", "Claude Haiku: solved or not"], ["WRITE", "Ticket outcome"]], "file": "agents/outcome.ts"}, "learn": {"kind": "block", "num": 6, "title": "Add good replies to the docs", "items": [["IF", "solved and rated 5"], ["LLM", "OpenAI embeddings"], ["WRITE", "pgvector: doc_chunks"]], "file": "agents/learn.ts"}, "done": {"kind": "output", "title": "Ticket closed", "note": "Solved tickets close; their best replies feed future drafts."}}, "edges": [{"from": "webhook", "to": "receive", "kind": "main"}, {"from": "receive", "to": "classify", "kind": "main"}, {"from": "classify", "to": "isHuman", "kind": "main"}, {"from": "isHuman", "to": "draft", "kind": "main", "label": "no"}, {"from": "isHuman", "to": "escalate", "kind": "down", "label": "yes"}, {"from": "draft", "to": "send", "kind": "main"}, {"from": "send", "to": "outcome", "kind": "return", "label": "after the customer answers, or 3 days"}, {"from": "outcome", "to": "learn", "kind": "main"}, {"from": "learn", "to": "done", "kind": "main"}]}, "check": {"rows": {}, "blocks": {}, "prompts": {}, "summary": null}, "stats": {"ticket_classify": {"model": "claude-haiku-5-5", "calls": 1840, "in_tokens": 910, "out_tokens": 42, "cost_usd": 0.0011, "ms_p50": 820, "since": "2026-08-01"}, "ticket_reply_turn": {"model": "claude-sonnet-5-5", "calls": 5210, "in_tokens": 3650, "out_tokens": 310, "cost_usd": 0.0156, "ms_p50": 3100, "since": "2026-08-01"}, "docs_embed_query": {"model": "text-embedding-3-small", "calls": 2290, "in_tokens": 18, "out_tokens": 0, "cost_usd": 4e-07, "ms_p50": 140, "since": "2026-08-01"}}, "prompts": {}, "link": {"template": "https://github.com/your-org/support-agent/blob/{commit}/{path}#L{line}", "commit": "HEAD", "root": ""}, "examples": [{"id": "ticket-48213", "name": "Ticket 48213, charged twice (made up)", "source": "an invented run for this example; in your project, take runs from your own database rows, logs or traces", "summary": "Classified billing at 0.91; 4 model turns: searched the docs, looked up the order, refunded $49, answered; a person approved the reply after one edit.", "path": {"receive:0.c0": "no", "draft:0.c0.c1.k2-0": "no", "draft:0.c1": "no", "send:0": "no"}, "rows": {"draft:0.c0": "4 turns", "draft:0.c0.c1": "turn 1 search_docs, turn 2 lookup_order, turn 3 refund_order, turn 4 the answer", "send:0.n0": "approved after one edit, 6 minutes later"}, "fx": {"receive:0.c1#0": {"out": "“Charged twice for my March invoice”, customer on the Pro plan, 2 earlier tickets"}, "classify:1.c0#0": {"in": "subject, body, plan Pro, last 3 comments", "out": "billing, urgent false, confidence 0.91", "note": "934 tokens in, 0.8 s"}, "draft:0.c0.c0#0": {"note": "4 turns, 15,210 tokens in, 1,180 out, 11.6 s in all"}, "draft:0.c0.c1.k0-0#1": {"out": "6 chunks, the best “Duplicate charges and refunds”"}, "draft:0.c0.c1.k1-0#0": {"out": "order A-7731, $49.00, charged twice on 2 Mar"}, "draft:0.c0.c1.k2-1#0": {"in": "order A-7731, $49.00", "out": "refund created"}, "send:1#0": {"in": "the reply, edited by the person"}}, "calls": {"ticket_classify": {"count": 1, "cost_usd": 0.0011}, "ticket_reply_turn": {"count": 4, "cost_usd": 0.0631}, "docs_embed_query": {"count": 1, "cost_usd": 4e-07}}}]};
+const SPEC = DATA.spec;
+const CHECK = DATA.check || { rows: {}, blocks: {}, prompts: {}, summary: null };
+const STATS = DATA.stats || {};
+const PROMPTS = DATA.prompts || {};
+const LINK = DATA.link || null;
+// Real runs to lay over the diagram: { id, name, source, summary, rows: {key: text}, fx: {id: {in, out, note}},
+// path: {key: 'yes' | 'no' | case index}, calls: {feature: {count, cost_usd}} }.
+const EXAMPLES = DATA.examples || [];
+let exampleId = '';
+const example = () => EXAMPLES.find(item => item.id === exampleId) || null;
+
+// ── Look ────────────────────────────────────────────────────────────────────
+// [light, dark]. The page uses CSS variables so it follows the theme; the Figma copy uses the light values.
+const P = {
+  bg:       ['#f5f6f8', '#0f1216'],
+  band:     ['#eceff3', '#161a20'],
+  bandLine: ['#d5dbe3', '#262d37'],
+  card:     ['#ffffff', '#1c2129'],
+  cardLine: ['#c3ccd8', '#38424f'],
+  ink:      ['#141b26', '#e5e9ef'],
+  muted:    ['#556173', '#9ba6b5'],
+  faint:    ['#7d8899', '#727d8c'],
+  line:     ['#3e4a5b', '#a9b3c1'],
+  llm:      ['#c2610a', '#f08c35'],
+  api:      ['#0e7c72', '#2ab5a6'],
+  data:     ['#15803d', '#41c26c'],
+  code:     ['#2257d6', '#6d9bff'],
+  cond:     ['#5a6576', '#9aa5b5'],
+  person:   ['#d32626', '#f26d6d'],
+  warn:     ['#b45309', '#f2a33a'],
+  onTag:    ['#ffffff', '#0f1216'],
+};
+const TAGS = {
+  TASK:   { color: 'ink',    filled: true,  label: 'a queued task starts' },
+  LLM:    { color: 'llm',    filled: true,  label: 'model call' },
+  API:    { color: 'api',    filled: true,  label: 'external API call' },
+  READ:   { color: 'data',   filled: false, label: 'database read' },
+  WRITE:  { color: 'data',   filled: true,  label: 'database write or file saved' },
+  CODE:   { color: 'code',   filled: false, label: 'the agent’s own logic' },
+  IF:     { color: 'cond',   filled: false, label: 'condition' },
+  PERSON: { color: 'person', filled: true,  label: 'a person acts' },
+  IN:     { color: 'faint',  filled: false, label: 'input' },
+  OUT:    { color: 'faint',  filled: false, label: 'output' },
+  LOCK:     { color: 'warn', filled: false, label: 'holds a lock' },
+  PARALLEL: { color: 'code', filled: false, label: 'runs in parallel' },
+  RISK:     { color: 'warn', filled: true,  label: 'a risk found while tracing' },
+  RUN:      { color: 'code', filled: true,  label: 'what the example run did' },
+};
+const FONT = '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif';
+const MONO = '"IBM Plex Mono", Menlo, Consolas, monospace';
+const W = 1340, M = 30, PAD = 16, BAND_GAP = 44;
+const CONTENT_X = M + PAD, CONTENT_W = W - 2 * M - 2 * PAD;
+const SIZES = { block: 224, person: 224, output: 224, decision: 140, trigger: 130, side: 210 };
+const TAG_W = 54;
+const IND = 24;
+// Detailed view: the code column, then one column per place a call goes.
+const LANES = {
+  code: { x: M, w: 560 },
+  llm: { x: 640, w: 210, title: 'LLM', color: 'llm' },
+  api: { x: 870, w: 210, title: 'EXTERNAL API', color: 'api' },
+  db: { x: 1100, w: 210, title: 'DATABASE & FILES', color: 'data' },
+};
+const LANE_OF = { LLM: 'llm', API: 'api', READ: 'db', WRITE: 'db' };
+const HEAD_OF = { LLM: 'both', API: 'both', READ: 'start', WRITE: 'end' };
+
+(function themeTokens() {
+  const vars = i => Object.entries(P).map(([k, v]) => `--c-${k}:${v[i]}`).join(';');
+  const style = document.createElement('style');
+  style.textContent = `:root{${vars(0)}}`
+    + `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${vars(1)}}}`
+    + `:root[data-theme="dark"]{${vars(1)}}`;
+  document.head.appendChild(style);
+})();
+
+// ── The workflow, indexed ───────────────────────────────────────────────────
+// Row keys match bauplan.py: "<node>:<i>", children ".c<i>" (calls), ".y<i>" (yes), ".n<i>" (no),
+// ".k<case>-<i>" (switch cases).
+const BRANCHES = [['calls', 'c'], ['yes', 'y'], ['no', 'n']];
+function walkRows(rows, prefix, visit, ctx = {}) {
+  (rows || []).forEach((row, i) => {
+    const key = prefix + i;
+    visit(row, key, ctx);
+    BRANCHES.forEach(([field, mark]) => {
+      if (row[field] && row[field].length) walkRows(row[field], `${key}.${mark}`, visit, { ...ctx, parent: row });
+    });
+    (row.cases || []).forEach((c, ci) => walkRows(c.rows, `${key}.k${ci}-`, visit, { ...ctx, parent: row }));
+  });
+}
+const ORDER = [];       // node ids with detail, in band order
+SPEC.bands.forEach(band => {
+  band.main.forEach(id => { if (SPEC.nodes[id] && SPEC.nodes[id].detail) ORDER.push(id); });
+  (band.side || []).forEach(sd => { if (SPEC.nodes[sd.id] && SPEC.nodes[sd.id].detail) ORDER.push(sd.id); });
+});
+const FX = {};          // effect id -> { fx, node, row, key }
+const RISKS = [];       // { node, row, key, text }, in the order the workflow reaches them
+ORDER.forEach(id => walkRows(SPEC.nodes[id].detail, `${id}:`, (row, key) => {
+  (row.fx || []).forEach((fx, j) => { FX[`${key}#${j}`] = { fx, node: id, row, key }; });
+  (row.risks || []).forEach(text => RISKS.push({ node: id, row, key, text }));
+}));
+const entityOf = fx => (fx.entity || fx.title).split(' + ')[0].trim();
+const blockLabel = id => {
+  const n = SPEC.nodes[id];
+  return n.num ? `${String(n.num).padStart(2, '0')} ${n.title}` : n.title;
+};
+const rowLabel = row => row.fn || row.title || row.cond || row.on || row.over || row.until || row.name || '';
+const loopText = row => (row.over && row.until ? `For ${row.over}, until ${row.until}` : row.over ? `For ${row.over}` : `Repeat until ${row.until}`);
+function codeLink(at, key) {
+  if (!LINK || !LINK.template || !at) return '';
+  const check = CHECK.rows[key] || {};
+  const cut = at.lastIndexOf(':');
+  const path = at.slice(0, cut), line = at.slice(cut + 1);
+  return LINK.template.replace('{commit}', LINK.commit || 'HEAD').replace('{root}', LINK.root || '')
+    .replace('{path}', [SPEC.repo.code_root, path].filter(Boolean).join('/')).replace('{line}', check.line || line);
+}
+
+// ── Text ────────────────────────────────────────────────────────────────────
+const ctx2d = document.createElement('canvas').getContext('2d');
+function measure(s, size, weight = 400, family = FONT) {
+  ctx2d.font = `${weight} ${size}px ${family}`;
+  return ctx2d.measureText(s).width;
+}
+function wrap(s, width, size, weight = 400, family = FONT, path = false) {
+  // A sign stays on the line of the value it belongs to: "≥ 0.9", "→ skipped".
+  const tokens = path ? String(s).split(/(?<=\/)/) : String(s).replace(/([≥≤→<>=]) /g, '$1 ').split(' ');
+  const join = path ? '' : ' ';
+  const lines = [];
+  let line = '';
+  for (const token of tokens) {
+    const next = line ? line + join + token : token;
+    if (!line || measure(next, size, weight, family) <= width) line = next;
+    else { lines.push(line); line = token; }
+    if (measure(line, size, weight, family) > width) {
+      const parts = breakWord(line, width, size, weight, family);
+      lines.push(...parts.slice(0, -1));
+      line = parts[parts.length - 1];
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+// A name too long for its line (current_analysis.checklist_version) breaks after _ . : / - or, failing that, anywhere.
+function breakWord(word, width, size, weight, family) {
+  const parts = [];
+  let rest = word;
+  while (rest.length > 1 && measure(rest, size, weight, family) > width) {
+    let cut = rest.length - 1;
+    while (cut > 1 && measure(rest.slice(0, cut), size, weight, family) > width) cut -= 1;
+    const soft = Math.max(...['_', '.', ':', '/', '-', ','].map(ch => rest.lastIndexOf(ch, cut - 1) + 1));
+    if (soft > cut / 2) cut = soft;
+    parts.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  parts.push(rest);
+  return parts;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const r = n => Math.round(n * 10) / 10;
+const fmtInt = n => Math.round(n).toLocaleString('en-US');
+
+// ── Drawing primitives ──────────────────────────────────────────────────────
+function painter(mode) {
+  const c = k => (mode === 'page' ? `var(--c-${k})` : P[k][0]);
+  const paint = (fill, stroke, width) => {
+    const sw = width ? ` stroke-width="${width}"` : '';
+    return mode === 'page'
+      ? `style="fill:${fill ? c(fill) : 'none'};stroke:${stroke ? c(stroke) : 'none'}"${sw}`
+      : `fill="${fill ? c(fill) : 'none'}" stroke="${stroke ? c(stroke) : 'none'}"${sw}`;
+  };
+  const text = (x, y, s, o = {}) => {
+    const { size = 12, weight = 400, color = 'ink', family = FONT, anchor = 'start', spacing = 0 } = o;
+    return `<text x="${r(x)}" y="${r(y)}" font-family='${family}' font-size="${size}" font-weight="${weight}"`
+      + (anchor !== 'start' ? ` text-anchor="${anchor}"` : '')
+      + (spacing ? ` letter-spacing="${spacing}"` : '')
+      + ` ${paint(color)}>${esc(s)}</text>`;
+  };
+  const tag = (x, y, name) => {
+    const t = TAGS[name];
+    return `<rect x="${r(x + 0.5)}" y="${r(y + 0.5)}" width="${TAG_W - 1}" height="15" rx="3" ${t.filled ? paint(t.color) : paint('card', t.color, 1)}/>`
+      + text(x + TAG_W / 2, y + 11.3, name, { size: 9, weight: 600, color: t.filled ? 'onTag' : t.color, anchor: 'middle', spacing: 0.6 });
+  };
+  // Orthogonal polyline with drawn arrowheads (polygons, so they survive the paste into Figma).
+  const arrow = (pts, { head = 'end', dashed = false, color = 'line', width = 1.4 } = {}) => {
+    const L = 7, half = 4;
+    const p = pts.map(q => q.slice());
+    const heads = [];
+    const headAt = (tip, from) => {
+      const dx = Math.sign(tip[0] - from[0]), dy = Math.sign(tip[1] - from[1]);
+      const bx = tip[0] - dx * L, by = tip[1] - dy * L;
+      heads.push(`<polygon points="${r(tip[0])},${r(tip[1])} ${r(bx - dy * half)},${r(by + dx * half)} ${r(bx + dy * half)},${r(by - dx * half)}" ${paint(color)}/>`);
+      return [bx, by];
+    };
+    if (head === 'end' || head === 'both') p[p.length - 1] = headAt(p[p.length - 1], p[p.length - 2]);
+    if (head === 'start' || head === 'both') p[0] = headAt(p[0], p[1]);
+    const d = 'M' + p.map(q => `${r(q[0])} ${r(q[1])}`).join(' L');
+    return `<path d="${d}" ${paint(null, color, width)} stroke-linejoin="round"${dashed ? ' stroke-dasharray="5 4"' : ''}/>` + heads.join('');
+  };
+  const vline = (x, y1, y2, color, dash) => `<line x1="${r(x)}" x2="${r(x)}" y1="${r(y1)}" y2="${r(y2)}" ${paint(null, color, 1.2)}${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  return { mode, paint, text, tag, arrow, vline };
+}
+
+function svgShell(width, height, aria, body, R) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${r(height)}" width="${width}" height="${r(height)}" role="img" aria-label="${esc(aria)}">`
+    + `<rect x="0" y="0" width="${width}" height="${r(height)}" ${R.paint('bg')}/>` + body + `</svg>`;
+}
+
+function legendRow(R, items, y) {
+  const out = [];
+  let lx = M;
+  items.forEach(item => {
+    const lead = item.tag ? TAG_W : 26;
+    const iw = lead + 6 + measure(item.label, 11.5);
+    if (lx + iw > W - M) { lx = M; y += 24; }
+    out.push(item.tag ? R.tag(lx, y, item.tag) : item.glyph(lx, y));
+    out.push(R.text(lx + lead + 6, y + 11.5, item.label, { size: 11.5, color: 'muted' }));
+    lx += iw + 22;
+  });
+  return { svg: out.join(''), bottom: y + 16 };
+}
+
+function shapeGlyph(R, shape) {
+  return (x, y) => {
+    if (shape === 'decision' || shape === 'model') {
+      const color = shape === 'model' ? 'llm' : 'cond';
+      return `<rect x="${x + 0.5}" y="${y + 0.5}" width="25" height="15" rx="3" ${R.paint('card', color, 1.2)} stroke-dasharray="3 2"/>`
+        + `<rect x="${x + 9.5}" y="${y + 4.5}" width="7" height="7" transform="rotate(45 ${x + 13} ${y + 8})" ${R.paint(color)}/>`;
+    }
+    if (shape === 'side') return `<rect x="${x + 0.5}" y="${y + 0.5}" width="25" height="15" rx="3" ${R.paint('card', 'cardLine', 1)} stroke-dasharray="4 3"/>`;
+    if (shape === 'faded') return `<g opacity="0.5"><rect x="${x + 0.5}" y="${y + 0.5}" width="25" height="15" rx="3" ${R.paint('card', 'cardLine', 1)}/></g>`;
+    if (shape === 'failure') return R.vline(x + 4, y, y + 16, 'person', '3 3') + `<g opacity="0.5"><rect x="${x + 9.5}" y="${y + 0.5}" width="16" height="15" rx="3" ${R.paint('card', 'cardLine', 1)}/></g>`;
+    if (shape === 'start') return `<rect x="${x + 0.75}" y="${y + 0.75}" width="24.5" height="14.5" rx="7" ${R.paint('card', 'ink', 1.5)}/>`;
+    if (shape === 'loop') return `<rect x="${x + 0.5}" y="${y + 0.5}" width="25" height="15" rx="3" ${R.paint('card', 'code', 1.2)} stroke-dasharray="2 2"/>`;
+    const heads = { write: 'end', read: 'start', call: 'both' }[shape];
+    return R.arrow([[x + 1, y + 8], [x + 25, y + 8]], { head: heads });
+  };
+}
+
+// ── Overview ────────────────────────────────────────────────────────────────
+function buildNode(n, w, R, changed) {
+  const pad = 12, inner = w - 2 * pad;
+  if (n.kind === 'decision') {
+    const lines = wrap(n.title, inner - 16, 12, 500);
+    return {
+      h: lines.length * 15 + 20,
+      draw: h => {
+        const top = (h - lines.length * 15) / 2;
+        return `<rect x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', 'cond', 1.2)} stroke-dasharray="4 3"/>`
+          + `<rect x="12" y="${r(h / 2 - 4.5)}" width="9" height="9" transform="rotate(45 16.5 ${r(h / 2)})" ${R.paint('cond')}/>`
+          + lines.map((ln, i) => R.text(28, top + i * 15 + 11.5, ln, { size: 12, weight: 500 })).join('');
+      },
+    };
+  }
+  const ops = [];
+  let y = 12;
+  const risks = RISKS.filter(item => SPEC.nodes[item.node] === n).length;
+  const alerts = [changed ? 'CHANGED SINCE DRAWN' : '', risks ? `${risks} RISK${risks === 1 ? '' : 'S'}` : ''].filter(Boolean).join(' · ');
+  const eyebrow = alerts || { trigger: 'START', output: 'RESULT' }[n.kind];
+  if (eyebrow) {
+    const yy = y;
+    ops.push(() => R.text(pad, yy + 9, eyebrow, { size: 9, weight: 600, color: alerts ? 'warn' : 'muted', spacing: 0.8 }));
+    y += 15;
+  }
+  const tsize = n.kind === 'side' ? 12.5 : 13.5;
+  const titleLines = wrap(n.title, inner - (n.num ? 22 : 0), tsize, 600);
+  titleLines.forEach((ln, i) => { const yy = y + i * 17 + 13; ops.push(() => R.text(pad, yy, ln, { size: tsize, weight: 600 })); });
+  if (n.num) { const yy = y + 12; ops.push(() => R.text(w - pad, yy, String(n.num).padStart(2, '0'), { size: 10.5, color: 'faint', family: MONO, anchor: 'end' })); }
+  y += titleLines.length * 17;
+  if (n.note) {
+    y += 2;
+    const noteLines = wrap(n.note, inner, 11.5);
+    noteLines.forEach((ln, i) => { const yy = y + i * 14.5 + 11; ops.push(() => R.text(pad, yy, ln, { size: 11.5, color: 'muted' })); });
+    y += noteLines.length * 14.5;
+  }
+  if (n.items && n.items.length) {
+    y += 9;
+    n.items.forEach(([name, s]) => {
+      const lines = wrap(s, inner - TAG_W - 6, 11.5);
+      const top = y;
+      const color = name === 'IN' || name === 'OUT' ? 'muted' : 'ink';
+      ops.push(() => R.tag(pad, top - 1, name) + lines.map((ln, i) => R.text(pad + TAG_W + 6, top + i * 14.5 + 11, ln, { size: 11.5, color })).join(''));
+      y += Math.max(16, lines.length * 14.5) + 6;
+    });
+    y -= 6;
+  }
+  const fileLines = n.file ? wrap(n.file, inner, 10, 400, MONO, true) : [];
+  const natural = fileLines.length ? y + 26 + fileLines.length * 13 : y + 12;
+  const box = {
+    block: ['card', 'cardLine', 1], person: ['card', 'person', 1.5], side: ['card', 'cardLine', 1],
+    trigger: ['card', 'ink', 1.5], output: ['card', 'data', 1.5],
+  }[n.kind];
+  if (changed) box[1] = 'warn';
+  return {
+    h: natural,
+    draw: h => {
+      let s = `<rect x="0" y="0" width="${w}" height="${r(h)}" rx="${n.kind === 'trigger' ? 14 : 8}" ${R.paint(...box)}${n.kind === 'side' ? ' stroke-dasharray="5 4"' : ''}/>`;
+      s += ops.map(f => f()).join('');
+      if (fileLines.length) {
+        const fy = h - 12 - fileLines.length * 13;
+        s += `<line x1="${pad}" x2="${w - pad}" y1="${r(fy - 6)}" y2="${r(fy - 6)}" ${R.paint(null, 'bandLine', 1)}/>`;
+        s += fileLines.map((ln, i) => R.text(pad, fy + i * 13 + 9.5, ln, { size: 10, color: 'faint', family: MONO })).join('');
+      }
+      return s;
+    },
+  };
+}
+
+function buildOverview(mode) {
+  const R = painter(mode);
+  const pos = {};
+  const layers = { bands: [], nodes: [], edges: [] };
+  // The canvas grows when a band holds more blocks than fit the standard width.
+  const MIN_GAP = 32;
+  const widest = Math.max(0, ...SPEC.bands.map(band => band.main.reduce((a, id) => a + (SPEC.nodes[id].w || SIZES[SPEC.nodes[id].kind] || SIZES.block), 0) + (band.main.length - 1) * MIN_GAP));
+  const CW = Math.max(CONTENT_W, widest);
+  const OW = CW + 2 * (M + PAD);
+  const head = [R.text(M, 38, SPEC.title, { size: 20, weight: 600 }), R.text(M, 60, metaLine(), { size: 12, color: 'muted' })];
+  const legend = legendRow(R, [
+    ...['LLM', 'API', 'READ', 'WRITE', 'CODE', 'IF', 'PERSON', 'IN', 'OUT'].map(tag => ({ tag, label: TAGS[tag].label })),
+    { glyph: shapeGlyph(R, 'decision'), label: 'decision that changes the path' },
+    { glyph: shapeGlyph(R, 'side'), label: 'branch off the main path' },
+    { glyph: shapeGlyph(R, 'start'), label: 'where work starts' },
+  ], 84);
+  head.push(legend.svg);
+  let y = legend.bottom + 26;
+
+  const stretches = kind => kind === 'block' || kind === 'person' || kind === 'output';
+  const changedIds = new Set(Object.keys(CHECK.blocks || {}).filter(id => (CHECK.blocks[id].changed || []).length));
+  SPEC.bands.forEach(band => {
+    const y0 = y, rowTop = y0 + 50, arrowY = rowTop + 26;
+    const items = band.main.map(id => {
+      const n = SPEC.nodes[id], w = n.w || SIZES[n.kind] || SIZES.block;
+      return { id, n, w, b: buildNode(n, w, R, changedIds.has(id)) };
+    });
+    // A short band keeps its blocks together instead of spreading them over the full width.
+    const gap = items.length > 1 ? Math.min(72, (CW - items.reduce((a, it) => a + it.w, 0)) / (items.length - 1)) : 0;
+    const rowH = Math.max(...items.filter(it => stretches(it.n.kind)).map(it => it.b.h));
+    let x = CONTENT_X;
+    items.forEach(it => {
+      const h = stretches(it.n.kind) ? rowH : it.b.h;
+      const top = it.n.kind === 'decision' ? arrowY - h / 2 : rowTop;
+      pos[it.id] = { x, y: top, w: it.w, h, arrowY, band };
+      const link = mode === 'page' && it.n.detail
+        ? ` data-block="${it.id}" tabindex="0" role="link" aria-label="Open the details of ${esc(it.n.title)}"` : '';
+      layers.nodes.push(`<g transform="translate(${r(x)} ${r(top)})"${link}>${it.b.draw(h)}</g>`);
+      x += it.w + gap;
+    });
+    let bottom = rowTop + rowH;
+    if (band.side) {
+      const sideTop = bottom + 46;
+      let sideH = 0;
+      band.side.forEach(sd => {
+        const n = SPEC.nodes[sd.id], w = n.w || SIZES.side, b = buildNode(n, w, R, changedIds.has(sd.id)), p = pos[sd.under];
+        const sx = Math.max(CONTENT_X, Math.min(p.x + p.w / 2 - w / 2, CONTENT_X + CW - w));
+        pos[sd.id] = { x: sx, y: sideTop, w, h: b.h, band };
+        const link = mode === 'page' && n.detail
+          ? ` data-block="${sd.id}" tabindex="0" role="link" aria-label="Open the details of ${esc(n.title)}"` : '';
+        layers.nodes.push(`<g transform="translate(${r(sx)} ${r(sideTop)})"${link}>${b.draw(b.h)}</g>`);
+        sideH = Math.max(sideH, b.h);
+      });
+      bottom = sideTop + sideH;
+    }
+    const bh = bottom + 18 - y0;
+    band.box = { y: y0, h: bh };
+    const caps = band.title.toUpperCase();
+    layers.bands.push(
+      `<rect x="${M}" y="${r(y0)}" width="${OW - 2 * M}" height="${r(bh)}" rx="12" ${R.paint('band', 'bandLine', 1)}/>`
+      + R.text(M + PAD, y0 + 27, caps, { size: 11.5, weight: 600, spacing: 1 })
+      + R.text(M + PAD + measure(caps, 11.5, 600) + caps.length + 14, y0 + 27, band.note || '', { size: 11.5, color: 'muted' }),
+    );
+    y = y0 + bh + BAND_GAP;
+  });
+  const H = y - BAND_GAP + 30;
+
+  SPEC.edges.forEach(e => {
+    const a = pos[e.from], b = pos[e.to];
+    if (!a || !b) return;
+    let pts, label = '';
+    if (e.kind === 'main') {
+      pts = [[a.x + a.w, a.arrowY], [b.x, a.arrowY]];
+      if (e.label) label = R.text((a.x + a.w + b.x) / 2, a.arrowY - 6, e.label, { size: 10.5, color: 'muted', anchor: 'middle' });
+    } else if (e.kind === 'down') {
+      const ax = a.x + a.w / 2, bx = b.x + b.w / 2, ay = a.y + a.h;
+      pts = Math.abs(ax - bx) < 1 ? [[ax, ay], [ax, b.y]] : [[ax, ay], [ax, (ay + b.y) / 2], [bx, (ay + b.y) / 2], [bx, b.y]];
+      if (e.label) label = R.text(ax + 7, ay + 16, e.label, { size: 10.5, color: 'muted' });
+    } else if (e.kind === 'up') {
+      const ax = a.x + a.w / 2;
+      pts = [[ax, a.y], [ax, b.y + b.h]];
+      if (e.label) label = R.text(ax + 7, a.y - 12, e.label, { size: 10.5, color: 'muted' });
+    } else {
+      const gy = a.band.box.y + a.band.box.h + BAND_GAP / 2;
+      pts = [[a.x + a.w, a.arrowY], [OW - 14, a.arrowY], [OW - 14, gy], [14, gy], [14, b.arrowY], [b.x, b.arrowY]];
+      if (e.label) {
+        const tw = measure(e.label, 11, 500);
+        label = `<rect x="${r(OW / 2 - tw / 2 - 10)}" y="${r(gy - 10)}" width="${r(tw + 20)}" height="20" rx="10" ${R.paint('bg', 'bandLine', 1)}/>`
+          + R.text(OW / 2, gy + 4, e.label, { size: 11, weight: 500, color: 'muted', anchor: 'middle' });
+      }
+    }
+    layers.edges.push(R.arrow(pts, { dashed: e.dashed }) + label);
+  });
+
+  const aria = `${SPEC.title}, overview: ${SPEC.bands.map(b => b.title).join(', then ')}.`;
+  return svgShell(OW, H, aria, head.join('') + layers.bands.join('') + layers.edges.join('') + layers.nodes.join(''), R);
+}
+
+// ── Detailed ────────────────────────────────────────────────────────────────
+function buildCodeCell(row, w, R, check, key) {
+  const pad = 12, inner = w - 2 * pad, ops = [];
+  let y = 10;
+  const lead = ['if', 'switch', 'each'].includes(row.t) ? 18 : 0;
+  const push = (lines, o, lh, x = pad + lead) => {
+    const top = y;
+    lines.forEach((ln, i) => ops.push(() => R.text(x, top + i * lh + lh * 0.78, ln, o)));
+    y += lines.length * lh;
+  };
+  if (row.t === 'fn') push(wrap(row.fn + (row.returns ? ` → ${row.returns}` : ''), inner, 11.5, 500, MONO), { size: 11.5, weight: 500, family: MONO }, 15.5, pad);
+  if (row.t === 'do') push(wrap(row.title, inner, 12.5, 600), { size: 12.5, weight: 600 }, 16, pad);
+  if (row.t === 'if') push(wrap(row.cond, inner - lead, 12, 500), { size: 12, weight: 500 }, 15.5);
+  if (row.t === 'switch') push(wrap(row.on, inner - lead, 12, 500), { size: 12, weight: 500 }, 15.5);
+  if (row.t === 'each') push(wrap(loopText(row), inner - lead, 12, 500), { size: 12, weight: 500 }, 15.5);
+  if (row.decided_by === 'model') { y += 1; push(['decided by the model'], { size: 10.5, weight: 600, color: 'llm' }, 14); }
+  if (row.then) { y += 1; push(wrap(`→ ${row.then}`, inner - lead, 11.5), { size: 11.5, color: 'muted' }, 14.5); }
+  if (row.note) { y += 2; push(wrap(row.note, inner, 11.5), { size: 11.5, color: 'muted' }, 14.5, pad); }
+  const marks = [];
+  if (row.lock) marks.push(['LOCK', row.lock]);
+  if (row.parallel) marks.push(['PARALLEL', row.parallel]);
+  (row.risks || []).forEach(risk => marks.push(['RISK', risk]));
+  const ex = example();
+  if (ex) {
+    const taken = (ex.path || {})[key];
+    const caseName = row.t === 'switch' && taken != null && row.cases && row.cases[taken] ? row.cases[taken].when : '';
+    const text = (ex.rows || {})[key] || (taken == null ? '' : row.t === 'switch' ? `took: ${caseName}` : `this run: ${taken}`);
+    if (text) marks.push(['RUN', text]);
+  }
+  const markColor = { RISK: 'warn', RUN: 'code' };
+  marks.forEach(([name, text]) => {
+    y += 5;
+    const lines = wrap(text, inner - TAG_W - 6, 11);
+    const top = y;
+    ops.push(() => R.tag(pad, top - 1, name)
+      + lines.map((ln, i) => R.text(pad + TAG_W + 6, top + i * 14 + 10.5, ln, { size: 11, color: markColor[name] || 'ink', weight: markColor[name] ? 500 : 400 })).join(''));
+    y += Math.max(15, lines.length * 14);
+  });
+  let status = 'ok';
+  if (row.at) {
+    y += 3;
+    const c = check || {};
+    status = c.status || 'unchecked';
+    let at = row.at;
+    let color = 'faint';
+    if (status === 'moved') { at = `${row.at} → now at line ${c.line}`; color = 'warn'; }
+    if (status === 'missing' || status === 'missing-file') { at = `${row.at} · not found in the code`; color = 'person'; }
+    push(wrap(at, inner, 10, 400, MONO, true), { size: 10, color, family: MONO }, 13, pad);
+  }
+  const natural = y + 10;
+  const stroke = status === 'missing' || status === 'missing-file' ? 'person' : status === 'moved' || (row.risks || []).length ? 'warn' : null;
+  return {
+    h: natural,
+    draw: h => {
+      let box;
+      if (row.t === 'if' || row.t === 'switch') {
+        const hue = row.decided_by === 'model' ? 'llm' : 'cond';
+        box = `<rect x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', stroke || hue, 1.2)} stroke-dasharray="4 3"/>`
+          + `<rect x="${pad + 1}" y="14.5" width="8" height="8" transform="rotate(45 ${pad + 5} 18.5)" ${R.paint(hue)}/>`;
+      } else if (row.t === 'each') {
+        box = `<rect x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', stroke || 'code', 1.2)} stroke-dasharray="2 2"/>`
+          + R.text(pad + 4, 22, '↻', { size: 13, weight: 600, color: 'code', anchor: 'middle' });
+      } else {
+        box = `<rect x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', stroke || 'cardLine', stroke ? 1.5 : 1)}/>`;
+      }
+      return box + ops.map(f => f()).join('');
+    },
+  };
+}
+
+function statsLine(fx) {
+  const s = fx.feature && STATS[fx.feature];
+  if (!s) return '';
+  const bits = [];
+  if (s.in_tokens != null) bits.push(`≈${fmtInt(s.in_tokens)} in / ${fmtInt(s.out_tokens || 0)} out tokens`);
+  if (s.ms_p50 != null) bits.push(`${(s.ms_p50 / 1000).toFixed(1)} s`);
+  return bits.join(' · ');
+}
+
+function buildEffectCell(fx, w, R, run) {
+  const pad = 10, inner = w - 2 * pad, ops = [];
+  // A name too long to sit beside the tag (MailboxInboundAttachment) goes on the line below it.
+  const beside = inner - TAG_W - 6;
+  const fits = String(fx.title).split(' ').every(token => measure(token, 12, 600) <= beside);
+  const titleLines = wrap(fx.title, fits ? beside : inner, 12, 600);
+  const titleX = fits ? pad + TAG_W + 6 : pad, titleY = fits ? 8 : 28;
+  ops.push(() => R.tag(pad, 8, fx.tag) + titleLines.map((ln, i) => R.text(titleX, titleY + i * 15 + 11.5, ln, { size: 12, weight: 600 })).join(''));
+  let y = fits ? 8 + Math.max(16, titleLines.length * 15) : titleY + titleLines.length * 15;
+  const push = (lines, o, lh, x = pad) => {
+    const top = y;
+    lines.forEach((ln, i) => ops.push(() => R.text(x, top + i * lh + lh * 0.78, ln, o)));
+    y += lines.length * lh;
+  };
+  if (fx.method || fx.endpoint) { y += 3; push(wrap(`${fx.method || ''} ${fx.endpoint || ''}`.trim(), inner, 10.5, 400, MONO, true), { size: 10.5, family: MONO }, 13.5); }
+  if (fx.prompt && fx.prompt !== 'inline') { y += 3; push(wrap(fx.prompt, inner, 10, 400, MONO, true), { size: 10, color: 'faint', family: MONO }, 13); }
+  if (fx.text) { y += 3; push(wrap(fx.text, inner, 11), { size: 11, color: 'muted' }, 14); }
+  if (fx.sets) {
+    Object.entries(fx.sets).forEach(([field, value]) => {
+      y += 3;
+      const v = Array.isArray(value) ? value.join(' or ') : value;
+      push(wrap(`${field} → ${v}`, inner, 10.5, 500, MONO), { size: 10.5, weight: 500, color: 'data', family: MONO }, 13.5);
+    });
+  }
+  if (fx.fields && fx.fields.length && fx.tag !== 'LLM') { y += 3; push(wrap(fx.fields.join(', '), inner, 10, 400, MONO), { size: 10, color: 'faint', family: MONO }, 13); }
+  [['in', fx.in], ['out', fx.out]].forEach(([label, value]) => {
+    if (!value) return;
+    y += 4;
+    const top = y;
+    ops.push(() => R.text(pad, top + 10.5, label.toUpperCase(), { size: 8.5, weight: 600, color: 'faint', spacing: 0.6 }));
+    push(wrap(value, inner - 28, 11), { size: 11 }, 14, pad + 28);
+  });
+  const stats = statsLine(fx);
+  if (stats) { y += 4; push(wrap(stats, inner, 10.5), { size: 10.5, color: 'llm' }, 13.5); }
+  if (run) {
+    y += 6;
+    const top = y;
+    ops.push(() => `<line x1="${pad}" x2="${w - pad}" y1="${r(top - 3)}" y2="${r(top - 3)}" ${R.paint(null, 'code', 1)}/>`
+      + R.text(pad, top + 10, 'THIS RUN', { size: 8.5, weight: 600, color: 'code', spacing: 0.6 }));
+    y += 14;
+    [['in', run.in], ['out', run.out], ['', run.note]].forEach(([label, value]) => {
+      if (!value) return;
+      y += 2;
+      const row = y;
+      if (label) ops.push(() => R.text(pad, row + 10.5, label.toUpperCase(), { size: 8.5, weight: 600, color: 'code', spacing: 0.6 }));
+      push(wrap(value, inner - (label ? 28 : 0), 11), { size: 11, color: 'code' }, 14, pad + (label ? 28 : 0));
+    });
+  }
+  return {
+    h: y + 9,
+    draw: h => `<rect class="cell" x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', TAGS[fx.tag].color, 1)}/>` + ops.map(f => f()).join(''),
+  };
+}
+
+function buildBand(text, R, { label = 'TASK', fill = 'ink', fg = 'onTag', mono = true } = {}) {
+  const w = W - 2 * M, pad = 12;
+  const [name, note] = text;
+  const nameW = measure(name, 11.5, 500, mono ? MONO : FONT);
+  const noteX = pad + TAG_W + 10 + nameW + 14;
+  const noteLines = note ? wrap(note, w - noteX - pad, 11.5) : [];
+  const h = Math.max(1, noteLines.length) * 15 + 16;
+  return {
+    h,
+    draw: () => `<rect x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${fill === 'none' ? R.paint('bg', 'cardLine', 1) + ' stroke-dasharray="5 4"' : R.paint(fill)}/>`
+      + `<rect x="${pad + 0.5}" y="9" width="${TAG_W - 1}" height="15" rx="3" ${R.paint(null, fg, 1)}/>`
+      + R.text(pad + TAG_W / 2, 19.8, label, { size: 9, weight: 600, color: fg, anchor: 'middle', spacing: 0.6 })
+      + R.text(pad + TAG_W + 10, 20, name, { size: 11.5, weight: 500, family: mono ? MONO : FONT, color: fg })
+      + noteLines.map((ln, i) => R.text(noteX, 20 + i * 15, ln, { size: 11.5, color: fg === 'onTag' ? 'onTag' : 'muted' })).join(''),
+  };
+}
+
+// `path` says where these rows sit: on a side path, on a failure path, or neither (the main path).
+// ctx.paths is the reader's choice: 'all' fades side and failure paths, 'main' leaves them out,
+// 'failures' shows failure paths at full strength and fades everything else.
+function pathWrapper(path, ctx) {
+  if (path.skipped) return s => `<g opacity="0.2">${s}</g>`;
+  if (ctx.paths === 'failures') return s => (path.fail ? s : `<g opacity="0.22">${s}</g>`);
+  return s => (path.side || path.fail ? `<g opacity="0.5">${s}</g>` : s);
+}
+// Is this condition only a way off the main path (a stop, a skip, a failure) with nothing on the main path itself?
+const onlyExit = row => {
+  const off = row.fail || row.side;
+  if (row.t !== 'if' || !off || (row.fx || []).length) return false;
+  return !(row[off === 'yes' ? 'no' : 'yes'] || []).length;
+};
+
+function layoutRows(rows, prefix, depth, path, ctx) {
+  const { R, mode } = ctx;
+  const fade = pathWrapper(path, ctx);
+  (rows || []).forEach((row, i) => {
+    const key = prefix + i;
+    if (ctx.paths === 'main' && onlyExit(row)) return;
+    if (row.t === 'task') {
+      const note = [row.note, row.retries ? `Retries: ${row.retries}.` : ''].filter(Boolean).join(' ');
+      const t = buildBand([row.name, note], R);
+      ctx.out.push(fade(`<g transform="translate(${M} ${r(ctx.y)})">${t.draw()}</g>`));
+      ctx.y += t.h + 10;
+      return;
+    }
+    const x = LANES.code.x + depth * IND, w = LANES.code.w - depth * IND;
+    if (row.t === 'end') {
+      const lines = wrap(`→ ${row.text}`, w - 24, 11.5);
+      const h = lines.length * 14.5 + 10;
+      ctx.out.push(fade(`<g transform="translate(${r(x)} ${r(ctx.y)})"><rect x="0" y="0" width="${w}" height="${r(h)}" rx="${r(h / 2)}" ${R.paint('bg', 'cardLine', 1)}/>`
+        + lines.map((ln, j) => R.text(12, 5 + j * 14.5 + 11.3, ln, { size: 11.5, color: 'muted' })).join('') + `</g>`));
+      ctx.y += h + 8;
+      return;
+    }
+    const ex = example();
+    const taken = ex ? (ex.path || {})[key] : undefined;
+    const code = buildCodeCell(row, w, R, CHECK.rows[key], key);
+    const fxs = (row.fx || []).map((fx, j) => {
+      const lane = LANES[LANE_OF[fx.tag]] || LANES.db;
+      const id = `${key}#${j}`;
+      return { fx, id, lane, cell: buildEffectCell(fx, lane.w, R, ex && (ex.fx || {})[id]) };
+    });
+    const fxH = fxs.reduce((a, f) => a + f.cell.h, 0) + Math.max(0, fxs.length - 1) * 6;
+    const rowH = Math.max(code.h, fxH);
+    const top = ctx.y;
+    const href = mode === 'page' ? codeLink(row.at, key) : '';
+    const cell = `<g transform="translate(${r(x)} ${r(top)})">${code.draw(rowH)}</g>`;
+    ctx.out.push(fade(href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${cell}</a>` : cell));
+    let fy = top;
+    const codeRight = LANES.code.x + LANES.code.w;
+    fxs.forEach(f => {
+      const attrs = mode === 'page'
+        ? ` data-fx="${esc(f.id)}" data-tag="${f.fx.tag}" data-entity="${esc(entityOf(f.fx))}" tabindex="0" role="button" aria-label="${esc(`${f.fx.tag} ${f.fx.title}: show details`)}"` : '';
+      ctx.out.push(fade(`<g${attrs}>`
+        + R.arrow([[codeRight, fy + 15.5], [f.lane.x, fy + 15.5]], { head: HEAD_OF[f.fx.tag] })
+        + `<g transform="translate(${f.lane.x} ${r(fy)})">${f.cell.draw(f.cell.h)}</g></g>`));
+      fy += f.cell.h + 6;
+    });
+    ctx.y = top + rowH + 8;
+    const gutter = x + 11;
+    if (row.t === 'if') {
+      [['yes', 'y', 'IF YES'], ['no', 'n', 'IF NO']].forEach(([field, mark, label]) => {
+        if (!row[field] || !row[field].length) return;
+        const fail = row.fail === field;
+        const side = fail || row.side === field;
+        if (ctx.paths === 'main' && side) return;
+        const sub = { side: path.side || side, fail: path.fail || fail, skipped: path.skipped || (taken != null && taken !== field) };
+        const hue = fail ? 'person' : 'cond';
+        const caption = taken === field ? 'this run' : taken != null ? 'not taken in this run' : fail ? 'on failure' : side ? 'off the main path' : '';
+        const captionColor = taken === field ? 'code' : fail && taken == null ? 'person' : 'faint';
+        const labelY = ctx.y;
+        ctx.out.push(pathWrapper(sub, ctx)(R.text(x + IND, labelY + 11, label, { size: 9.5, weight: 600, color: hue, spacing: 0.8 })
+          + (caption ? R.text(x + IND + measure(label, 9.5, 600) + label.length * 0.8 + 10, labelY + 11, caption, { size: 10.5, color: captionColor, weight: taken === field ? 600 : 400 }) : '')));
+        ctx.y += 17;
+        layoutRows(row[field], `${key}.${mark}`, depth + 1, sub, ctx);
+        ctx.out.push(pathWrapper(sub, ctx)(R.vline(gutter, labelY + 2, ctx.y - 10, hue, '3 3')));
+      });
+    } else if (row.t === 'switch') {
+      const modelHue = row.decided_by === 'model' ? 'llm' : 'cond';
+      (row.cases || []).forEach((c, ci) => {
+        const fail = Boolean(c.fail);
+        const side = fail || Boolean(c.side);
+        if (ctx.paths === 'main' && side) return;
+        const sub = { side: path.side || side, fail: path.fail || fail, skipped: path.skipped || (taken != null && Number(taken) !== ci) };
+        const hue = fail ? 'person' : modelHue;
+        const labelY = ctx.y;
+        const whenX = x + IND + measure('WHEN', 9.5, 600) + 4 + 8;
+        const lines = wrap(c.when, w - IND - (whenX - x - IND) - 8, 11.5, 500);
+        ctx.out.push(pathWrapper(sub, ctx)(
+          R.text(x + IND, labelY + 11, 'WHEN', { size: 9.5, weight: 600, color: hue, spacing: 0.8 })
+          + lines.map((ln, j) => R.text(whenX, labelY + 11.5 + j * 14.5, ln, { size: 11.5, weight: 500, color: hue })).join('')));
+        ctx.y += lines.length * 14.5 + 4;
+        layoutRows(c.rows, `${key}.k${ci}-`, depth + 1, sub, ctx);
+        ctx.out.push(pathWrapper(sub, ctx)(R.vline(gutter, labelY + 2, ctx.y - 10, hue, '3 3')));
+      });
+    } else if (row.calls && row.calls.length) {
+      layoutRows(row.calls, `${key}.c`, depth + 1, path, ctx);
+      ctx.out.push(fade(R.vline(gutter, top + rowH, ctx.y - 10, row.t === 'each' ? 'code' : 'bandLine', row.t === 'each' ? '2 3' : '')));
+    }
+  });
+}
+
+function buildDetailed(mode, only) {
+  const R = painter(mode);
+  const ids = only ? [only] : ORDER;
+  const out = [R.text(M, 38, only ? blockLabel(only) : `${SPEC.title}, in detail`, { size: 20, weight: 600 }), R.text(M, 60, metaLine(), { size: 12, color: 'muted' })];
+  const legend = legendRow(R, [
+    ...['TASK', 'LLM', 'API', 'READ', 'WRITE', 'LOCK', 'PARALLEL', 'RISK', ...(example() ? ['RUN'] : [])].map(tag => ({ tag, label: TAGS[tag].label })),
+    { glyph: shapeGlyph(R, 'decision'), label: 'condition' },
+    { glyph: shapeGlyph(R, 'model'), label: 'decided by the model' },
+    { glyph: shapeGlyph(R, 'loop'), label: 'loop' },
+    { glyph: shapeGlyph(R, 'faded'), label: 'off the main path' },
+    { glyph: shapeGlyph(R, 'failure'), label: 'on failure' },
+    { glyph: shapeGlyph(R, 'write'), label: 'data goes out' },
+    { glyph: shapeGlyph(R, 'read'), label: 'data comes back' },
+    { glyph: shapeGlyph(R, 'call'), label: 'request and answer' },
+  ], 84);
+  out.push(legend.svg);
+  let y = legend.bottom + 26;
+
+  ids.forEach(id => {
+    const n = SPEC.nodes[id];
+    const headerY = y;
+    const ctx = { R, mode, out: [], y: y + 46, paths: pathsShown };
+    const laneTop = ctx.y - 6;
+    layoutRows(n.detail, `${id}:`, 0, { side: false, fail: false }, ctx);
+    if (n.handoff) {
+      const hb = buildBand([n.handoff.data, n.handoff.state], R, { label: 'NEXT', fill: 'none', fg: 'muted', mono: false });
+      ctx.out.push(`<g transform="translate(${M} ${r(ctx.y + 2)})">${hb.draw()}</g>`);
+      ctx.y += hb.h + 10;
+    }
+    const laneBottom = ctx.y + 2;
+    const lanes = ['llm', 'api', 'db'].map(k => `<rect x="${LANES[k].x - 8}" y="${r(laneTop)}" width="${LANES[k].w + 16}" height="${r(laneBottom - laneTop)}" rx="8" ${R.paint('band')}/>`).join('');
+    const changed = ((CHECK.blocks || {})[id] || {}).changed || [];
+    const header = `<g id="d-${id}">`
+      + `<rect x="${M}" y="${r(headerY)}" width="${W - 2 * M}" height="36" rx="8" ${R.paint('band', changed.length ? 'warn' : 'bandLine', changed.length ? 1.5 : 1)}/>`
+      + R.text(M + 14, headerY + 23, n.num ? String(n.num).padStart(2, '0') : '·', { size: 12, color: 'faint', family: MONO })
+      + R.text(M + 40, headerY + 23, n.title, { size: 14, weight: 600 })
+      + (changed.length ? R.text(M + 48 + measure(n.title, 14, 600), headerY + 23, 'changed since drawn', { size: 11, weight: 600, color: 'warn' }) : '')
+      + ['llm', 'api', 'db'].map(k => R.text(LANES[k].x + LANES[k].w / 2, headerY + 22.5, LANES[k].title, { size: 10, weight: 600, color: LANES[k].color, anchor: 'middle', spacing: 1 })).join('')
+      + `</g>`;
+    out.push(lanes + header + ctx.out.join(''));
+    y = laneBottom + 30;
+  });
+  const missing = Object.values(SPEC.nodes).filter(n => n.num && !n.detail).map(n => String(n.num).padStart(2, '0'));
+  if (!only && missing.length) {
+    out.push(R.text(M, y + 4, `Not traced at this level yet: ${missing.join(', ')}.`, { size: 12.5, color: 'muted' }));
+    y += 24;
+  }
+  const aria = `${SPEC.title}, in detail: each function in the order it runs, with the model calls, external API calls, database reads and writes it makes.`;
+  return svgShell(W, y + 10, aria, out.join(''), R);
+}
+
+// ── Data and model-call pages ───────────────────────────────────────────────
+// Like walkRows, but knows whether a row sits on a side path or a failure path.
+function walkPaths(rows, prefix, path, visit) {
+  (rows || []).forEach((row, i) => {
+    const key = prefix + i;
+    visit(row, key, path);
+    if (row.calls) walkPaths(row.calls, `${key}.c`, path, visit);
+    ['yes', 'no'].forEach(field => {
+      if (!row[field]) return;
+      const fail = row.fail === field;
+      walkPaths(row[field], `${key}.${field[0]}`, { side: path.side || fail || row.side === field, fail: path.fail || fail }, visit);
+    });
+    (row.cases || []).forEach((c, ci) => walkPaths(c.rows, `${key}.k${ci}-`, { side: path.side || Boolean(c.side || c.fail), fail: path.fail || Boolean(c.fail) }, visit));
+  });
+}
+
+// A field's lifecycle: the values the main path sets, in order (a write that picks one of several is one step),
+// then the values only failure paths set, then those only other side paths set.
+function lifecycle(writes) {
+  const main = [];
+  const failed = [];
+  const side = [];
+  const where = w => (w.block ? String(w.block).padStart(2, '0') : '·');
+  writes.forEach(w => {
+    const values = Array.isArray(w.value) ? w.value : [w.value];
+    const known = main.flatMap(step => step.values);
+    if (!w.path.side && !w.path.fail) {
+      if (values.every(v => known.some(k => k.value === v))) {
+        values.forEach(v => known.find(k => k.value === v).where.add(where(w)));
+        return;
+      }
+      main.push({ values: values.map(v => ({ value: v, where: new Set([where(w)]), fn: w.fn })) });
+      return;
+    }
+    const list = w.path.fail ? failed : side;
+    values.forEach(v => {
+      const hit = known.find(k => k.value === v) || failed.find(k => k.value === v) || side.find(k => k.value === v);
+      if (hit) hit.where.add(where(w)); else list.push({ value: v, where: new Set([where(w)]), fn: w.fn });
+    });
+  });
+  const chip = (v, style = '') => `<span class="chip" title="${esc(v.fn)}"${style ? ` style="${style}"` : ''}>${esc(v.value)} <small>${esc([...v.where].join(', '))}</small></span>`;
+  return main.map(step => step.values.map(v => chip(v)).join('<span class="sep">or</span>')).join('<span class="sep">→</span>')
+    + (failed.length ? `<span class="sep">· on failure:</span>${failed.map(v => chip(v, 'border-color:var(--bad)')).join('')}` : '')
+    + (side.length ? `<span class="sep">· off the main path:</span>${side.map(v => chip(v, 'border-style:dashed')).join('')}` : '');
+}
+
+function buildDataPage() {
+  const ents = {};
+  ORDER.forEach(id => walkPaths(SPEC.nodes[id].detail, `${id}:`, { side: false, fail: false }, (row, key, path) => {
+    (row.fx || []).forEach((fx, j) => {
+      if (fx.tag !== 'READ' && fx.tag !== 'WRITE') return;
+      const name = entityOf(fx);
+      const e = ents[name] || (ents[name] = { name, reads: 0, writes: 0, touches: [], life: {} });
+      e[fx.tag === 'READ' ? 'reads' : 'writes'] += 1;
+      e.touches.push({ id, row, fx, fxId: `${key}#${j}` });
+      Object.entries(fx.sets || {}).forEach(([field, value]) => {
+        (e.life[field] || (e.life[field] = [])).push({ value, path, block: SPEC.nodes[id].num, fn: rowLabel(row) });
+      });
+    });
+  }));
+  const list = Object.values(ents).sort((a, b) => (b.reads + b.writes) - (a.reads + a.writes));
+  const blockNum = id => (SPEC.nodes[id].num ? String(SPEC.nodes[id].num).padStart(2, '0') : '·');
+  return `<p>Every table, store and file the agent reads or writes, the status values it moves through, and the steps that touch it. Status values run in the order the main path sets them; the numbers are the blocks that set them.</p>`
+    + list.map(e => `<section class="entity">`
+      + `<header><h3>${esc(e.name)}</h3><span class="count">${e.writes} write${e.writes === 1 ? '' : 's'} · ${e.reads} read${e.reads === 1 ? '' : 's'}</span>`
+      + `<button class="plain" type="button" data-show-entity="${esc(e.name)}">Show in the detailed view</button></header>`
+      + Object.entries(e.life).map(([field, writes]) => `<div class="life"><span class="field">${esc(field)}</span>${lifecycle(writes)}</div>`).join('')
+      + `<div class="tablewrap"><table><thead><tr><th>Block</th><th>Step</th><th></th><th>Fields</th></tr></thead><tbody>`
+      + e.touches.map(t => `<tr class="clickable" data-card="${esc(t.fxId)}"><td>${blockNum(t.id)}</td><td class="mono">${esc(rowLabel(t.row))}</td>`
+        + `<td><span class="tag ${t.fx.tag}">${t.fx.tag}</span></td><td>${esc([(t.fx.fields || []).join(', '), t.fx.text || ''].filter(Boolean).join(' · '))}`
+        + `${t.fx.sets ? `<div class="mono">${esc(Object.entries(t.fx.sets).map(([k, v]) => `${k} → ${Array.isArray(v) ? v.join(' or ') : v}`).join(', '))}</div>` : ''}</td></tr>`).join('')
+      + `</tbody></table></div></section>`).join('');
+}
+
+function statsCells(fx) {
+  const s = fx.feature && STATS[fx.feature];
+  if (!s) return '<td class="num">—</td><td class="num">—</td><td class="num">—</td>';
+  const on = s.model && fx.model && s.model !== fx.model ? `<div class="mono">on ${esc(s.model)}</div>` : '';
+  return `<td class="num">${fmtInt(s.in_tokens || 0)} / ${fmtInt(s.out_tokens || 0)}${on}</td>`
+    + `<td class="num">${s.cost_usd != null ? `$${Number(s.cost_usd).toFixed(4)}` : '—'}</td>`
+    + `<td class="num">${s.ms_p50 != null ? `${(s.ms_p50 / 1000).toFixed(1)} s` : '—'}</td>`;
+}
+
+function buildModelsPage() {
+  const groups = {};
+  Object.entries(FX).forEach(([fxId, item]) => {
+    if (item.fx.tag !== 'LLM') return;
+    const unit = item.fx.unit || 'other';
+    (groups[unit] || (groups[unit] = [])).push({ fxId, ...item });
+  });
+  // Units in the order the workflow first reaches them.
+  const units = Object.keys(groups);
+  const ex = example();
+  const runCalls = (ex && ex.calls) || null;
+  const runCell = fx => {
+    if (!runCalls) return '';
+    const c = fx.feature && runCalls[fx.feature];
+    return `<td class="num">${c ? `${fmtInt(c.count)}${c.cost_usd != null ? ` · $${Number(c.cost_usd).toFixed(4)}` : ''}` : '0'}</td>`;
+  };
+  const runTotal = runCalls ? Object.values(runCalls).reduce((a, c) => ({ count: a.count + (c.count || 0), cost: a.cost + (c.cost_usd || 0) }), { count: 0, cost: 0 }) : null;
+  return `<p>Every model call, grouped by the unit of work it runs for. Usage numbers are averages per call from the usage log; when they were measured on an earlier model, the table says which. Click a row for the prompt, the output schema and the call site.</p>`
+    + (runTotal ? `<p>The example run made ${fmtInt(runTotal.count)} model calls for about $${runTotal.cost.toFixed(3)}; the "This run" column shows how many of each, and what they cost.</p>` : '')
+    + units.map(unit => `<div class="unit"><h3>For each ${esc(unit)}</h3><div class="tablewrap"><table><thead><tr>`
+      + `<th>Block</th><th>Called from</th><th>Model</th><th>How often</th><th>Rule on the answer</th><th>Tokens in / out</th><th>Cost</th><th>Median time</th>${runCalls ? '<th>This run</th>' : ''}</tr></thead><tbody>`
+      + groups[unit].map(g => `<tr class="clickable" data-card="${esc(g.fxId)}"><td>${SPEC.nodes[g.node].num ? String(SPEC.nodes[g.node].num).padStart(2, '0') : '·'}</td>`
+        + `<td class="mono">${esc(rowLabel(g.row))}</td><td>${esc(g.fx.title)}${g.fx.feature ? `<div class="mono">${esc(g.fx.feature)}</div>` : ''}</td>`
+        + `<td>${esc(g.fx.times || '')}</td><td>${esc(g.fx.threshold || '')}</td>${statsCells(g.fx)}${runCell(g.fx)}</tr>`).join('')
+      + `</tbody></table></div></div>`).join('');
+}
+
+function buildRisksPage() {
+  return `<p>Problems noticed while tracing the code: things that can go wrong, paths that never run, work that costs more than it should. Each one sits on the row it belongs to in the detailed view; click the step to open its code.</p>`
+    + `<div class="tablewrap"><table><thead><tr><th>Block</th><th>Step</th><th>Risk</th></tr></thead><tbody>`
+    + RISKS.map(item => {
+      const href = codeLink(item.row.at, item.key);
+      const step = href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(rowLabel(item.row))}</a>` : esc(rowLabel(item.row));
+      return `<tr><td>${esc(blockLabel(item.node))}</td><td class="mono">${step}</td><td>${esc(item.text)}</td></tr>`;
+    }).join('')
+    + `</tbody></table></div>`;
+}
+
+// ── Card drawer ─────────────────────────────────────────────────────────────
+function cardHTML(fxId) {
+  const item = FX[fxId];
+  if (!item) return '';
+  const { fx, row, node, key } = item;
+  const dl = [];
+  const add = (k, v) => { if (v != null && v !== '' && !(Array.isArray(v) && !v.length)) dl.push(`<dt>${esc(k)}</dt><dd>${v}</dd>`); };
+  add('Model', fx.model ? `<span class="mono">${esc(fx.model)}</span>` : '');
+  add('Falls back to', (fx.fallbacks || []).map(m => `<span class="mono">${esc(m)}</span>`).join(', '));
+  add('Request', fx.method || fx.endpoint ? `<span class="mono">${esc(`${fx.method || ''} ${fx.endpoint || ''}`.trim())}</span>` : '');
+  add('Runs', fx.times ? `${esc(fx.times)} per ${esc(fx.unit || 'run')}` : '');
+  add('Rule on the answer', fx.threshold ? esc(fx.threshold) : '');
+  add('Logged as', fx.feature ? `<span class="mono">${esc(fx.feature)}</span>` : '');
+  add('What', fx.text ? esc(fx.text) : '');
+  add('Fields', (fx.fields || []).length ? `<span class="mono">${esc(fx.fields.join(', '))}</span>` : '');
+  add('Sets', fx.sets ? `<span class="mono">${esc(Object.entries(fx.sets).map(([k, v]) => `${k} → ${Array.isArray(v) ? v.join(' or ') : v}`).join(', '))}</span>` : '');
+  add('Sends', fx.in ? esc(fx.in) : '');
+  add('Gets back', fx.out ? esc(fx.out) : '');
+  const run = example() && (example().fx || {})[fxId];
+  if (run) {
+    add('This run sent', run.in ? esc(run.in) : '');
+    add('This run got', run.out ? esc(run.out) : '');
+    add('This run', run.note ? esc(run.note) : '');
+  }
+  const s = fx.feature && STATS[fx.feature];
+  if (s) {
+    const on = s.model && fx.model && s.model !== fx.model ? ` Measured on ${esc(s.model)}, an earlier model.` : '';
+    add('Usage', `${fmtInt(s.calls || 0)} calls since ${esc(s.since || '?')}: about ${fmtInt(s.in_tokens || 0)} tokens in and ${fmtInt(s.out_tokens || 0)} out per call`
+      + `${s.cost_usd != null ? `, $${Number(s.cost_usd).toFixed(4)} each` : ''}${s.ms_p50 != null ? `, median ${(s.ms_p50 / 1000).toFixed(1)} s` : ''}.${on}`);
+  }
+  const href = codeLink(row.at, key);
+  add('Called from', `${esc(blockLabel(node))}<br><span class="mono">${esc(rowLabel(row))}</span>`
+    + (row.at ? `<br>${href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(row.at)}</a>` : `<span class="mono">${esc(row.at)}</span>`}` : ''));
+  let extra = '';
+  if (fx.schema) {
+    extra += `<h3>Output schema: ${esc(fx.schema.name || '')}</h3><ul>${(fx.schema.fields || []).map(f => `<li class="mono">${esc(f)}</li>`).join('')}</ul>`;
+  }
+  if (fx.prompt) {
+    const text = PROMPTS[fx.prompt];
+    const missing = (CHECK.prompts || {})[fx.prompt] === 'missing';
+    extra += `<h3>Prompt: <span class="mono">${esc(fx.prompt)}</span></h3>`
+      + (fx.prompt === 'inline' ? '<p>Built in the code at the call site.</p>'
+        : missing ? '<p>This prompt file was not found.</p>'
+        : text ? `<pre>${esc(text)}</pre>` : '<p>Not embedded.</p>');
+  }
+  return `<div class="top"><span class="tag ${fx.tag}">${fx.tag}</span><h2>${esc(fx.title)}</h2><button class="plain" type="button" id="card-close">Close</button></div>`
+    + `<dl>${dl.join('')}</dl>${extra}`;
+}
+let lastFocus = null;
+function openCard(fxId) {
+  const card = document.getElementById('card');
+  lastFocus = document.activeElement;
+  card.innerHTML = cardHTML(fxId);
+  card.hidden = false;
+  document.getElementById('card-close').addEventListener('click', closeCard);
+  document.getElementById('card-close').focus();
+}
+function closeCard() {
+  document.getElementById('card').hidden = true;
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('card').hidden) closeCard(); });
+
+// ── Page ────────────────────────────────────────────────────────────────────
+function metaLine() {
+  const d = SPEC.drawn_at || {};
+  return `Traced at commit ${d.commit || '?'}, ${d.date || ''}. File paths are under ${SPEC.repo.code_root}/.`;
+}
+function freshHTML() {
+  const s = CHECK.summary;
+  if (!s) return 'Not checked against the code. Run <code>bauplan.py check</code>.';
+  const parts = [`<span class="ok">${s.counts.ok} rows found</span>`];
+  if (s.counts.moved) parts.push(`<span class="warn">${s.counts.moved} moved</span>`);
+  if (s.counts.missing) parts.push(`<span class="bad">${s.counts.missing} not found</span>`);
+  if (s.counts.unchecked) parts.push(`${s.counts.unchecked} without a line to check`);
+  let text = `Checked against the code at <b>${esc(s.head)}</b> on ${esc(s.checked_at)}: ${parts.join(' · ')}.`;
+  if (s.prompts_missing && s.prompts_missing.length) text += ` <span class="bad">Missing prompts: ${esc(s.prompts_missing.join(', '))}.</span>`;
+  const changed = s.changed_blocks || [];
+  text += changed.length
+    ? ` <span class="warn">Changed since it was drawn at ${esc(s.drawn_commit)}: ${esc(changed.map(blockLabel).join(', '))}.</span>`
+    : ` Nothing it covers has changed since it was drawn at ${esc(s.drawn_commit)}.`;
+  if (RISKS.length) text += ` <span class="warn">${RISKS.length} risk${RISKS.length === 1 ? '' : 's'} noted while tracing.</span>`;
+  Object.entries(s.examples_stale || {}).forEach(([id, keys]) => {
+    const item = EXAMPLES.find(e => e.id === id);
+    text += ` <span class="warn">The example “${esc(item ? item.name : id)}” refers to ${keys.length} step${keys.length === 1 ? '' : 's'} that are no longer in the diagram.</span>`;
+  });
+  return text;
+}
+
+const CAPTIONS = {
+  overview: 'Blocks are numbered in the order work happens; dashed boxes branch off the main path. Click a block that has details to open them.',
+  detailed: 'Rows run top to bottom in the order the code runs; an indented row is called from the row above it, or runs inside the condition or loop above it. Click a function to open its code, or a call to see its details.',
+};
+// #detailed, #data and #models open a view; #<node id> opens that block's details, so a block can be linked.
+const HASH = location.hash.slice(1);
+const HASH_BLOCK = SPEC.nodes[HASH] && SPEC.nodes[HASH].detail ? HASH : '';
+const VIEWS = ['overview', 'detailed', 'data', 'models', 'risks'];
+let view = VIEWS.includes(HASH) ? HASH : HASH_BLOCK ? 'detailed' : 'overview';
+let only = HASH_BLOCK;
+let pathsShown = 'all';
+let highlight = { kind: '', find: '' };
+
+function applyHighlight() {
+  const svg = document.querySelector('#diagram svg');
+  if (!svg) return;
+  const find = highlight.find.trim().toLowerCase();
+  const active = Boolean(highlight.kind || find);
+  svg.classList.toggle('filtering', active);
+  svg.querySelectorAll('[data-fx]').forEach(g => {
+    const item = FX[g.dataset.fx];
+    if (!item) return;
+    const fx = item.fx;
+    const kindOk = !highlight.kind || (highlight.kind === 'DB' ? fx.tag === 'READ' || fx.tag === 'WRITE' : fx.tag === highlight.kind);
+    const hay = [entityOf(fx), fx.title, ...(fx.fields || []), ...Object.keys(fx.sets || {}), fx.feature || ''].join(' ').toLowerCase();
+    const findOk = !find || hay.includes(find);
+    g.classList.toggle('hl', active && kindOk && findOk);
+  });
+}
+
+function render() {
+  document.getElementById('title').textContent = SPEC.title;
+  document.getElementById('fresh').innerHTML = freshHTML();
+  const svgView = view === 'overview' || view === 'detailed';
+  document.getElementById('figure').hidden = !svgView;
+  document.getElementById('page').hidden = svgView;
+  document.getElementById('copy').hidden = !svgView;
+  document.getElementById('toolbar').hidden = view !== 'detailed';
+  document.getElementById('example-pick').hidden = !EXAMPLES.length || !['detailed', 'models'].includes(view);
+  const ex = example();
+  const line = document.getElementById('example-line');
+  line.hidden = !ex || !['detailed', 'models'].includes(view);
+  if (ex) line.innerHTML = `<b>${esc(ex.name)}.</b> ${esc(ex.summary || '')}<small>From ${esc(ex.source || 'an unnamed source')}. Branches it did not take are faded; what it did is in blue.</small>`;
+  if (view === 'overview') document.getElementById('diagram').innerHTML = buildOverview('page');
+  if (view === 'detailed') document.getElementById('diagram').innerHTML = buildDetailed('page', only);
+  if (view === 'data') document.getElementById('page').innerHTML = buildDataPage();
+  if (view === 'models') document.getElementById('page').innerHTML = buildModelsPage();
+  if (view === 'risks') document.getElementById('page').innerHTML = buildRisksPage();
+  document.getElementById('caption').textContent = CAPTIONS[view] || '';
+  VIEWS.forEach(v => document.getElementById(`tab-${v}`).setAttribute('aria-selected', String(v === view)));
+  applyHighlight();
+}
+function show(next, opts = {}) {
+  view = next;
+  if (opts.only !== undefined) { only = opts.only; document.getElementById('only').value = only; }
+  if (opts.find !== undefined) { highlight.find = opts.find; document.getElementById('find').value = opts.find; }
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+(function setup() {
+  const select = document.getElementById('only');
+  select.innerHTML = `<option value="">All blocks</option>` + ORDER.map(id => `<option value="${esc(id)}">${esc(blockLabel(id))}</option>`).join('');
+  select.value = only;
+  select.addEventListener('change', () => { only = select.value; render(); });
+  const names = [...new Set(Object.values(FX).filter(i => i.fx.tag === 'READ' || i.fx.tag === 'WRITE').map(i => entityOf(i.fx)))].sort();
+  document.getElementById('entities').innerHTML = names.map(n => `<option value="${esc(n)}"></option>`).join('');
+  document.getElementById('find').addEventListener('input', e => { highlight.find = e.target.value; applyHighlight(); });
+  document.querySelectorAll('#kinds button').forEach(b => b.addEventListener('click', () => {
+    highlight.kind = b.dataset.kind;
+    document.querySelectorAll('#kinds button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+    applyHighlight();
+  }));
+  document.querySelectorAll('#paths button').forEach(b => b.addEventListener('click', () => {
+    pathsShown = b.dataset.paths;
+    document.querySelectorAll('#paths button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+    render();
+  }));
+  document.getElementById('tab-risks').hidden = !RISKS.length;
+  const pick = document.getElementById('example');
+  pick.innerHTML = `<option value="">None</option>` + EXAMPLES.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join('');
+  pick.value = exampleId;
+  pick.addEventListener('change', () => { exampleId = pick.value; render(); });
+  VIEWS.forEach(v => document.getElementById(`tab-${v}`).addEventListener('click', () => show(v)));
+  const diagram = document.getElementById('diagram');
+  diagram.addEventListener('click', e => {
+    const block = e.target.closest('[data-block]');
+    if (block) { show('detailed', { only: block.dataset.block }); return; }
+    const fx = e.target.closest('[data-fx]');
+    if (fx) openCard(fx.dataset.fx);
+  });
+  diagram.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const block = e.target.closest('[data-block]');
+    const fx = e.target.closest('[data-fx]');
+    if (block || fx) e.preventDefault();
+    if (block) show('detailed', { only: block.dataset.block });
+    else if (fx) openCard(fx.dataset.fx);
+  });
+  document.getElementById('page').addEventListener('click', e => {
+    const showEntity = e.target.closest('[data-show-entity]');
+    if (showEntity) { show('detailed', { only: '', find: showEntity.dataset.showEntity }); return; }
+    const row = e.target.closest('[data-card]');
+    if (row) openCard(row.dataset.card);
+  });
+  document.getElementById('copy').addEventListener('click', () => {
+    const svg = view === 'overview' ? buildOverview('export') : buildDetailed('export', only);
+    const status = document.getElementById('status');
+    const fallback = () => {
+      const box = document.getElementById('fallback');
+      box.hidden = false;
+      box.value = svg;
+      box.focus();
+      box.select();
+      status.textContent = 'Copy the selected SVG below, then paste it into Figma.';
+    };
+    try {
+      navigator.clipboard.writeText(svg).then(() => { status.textContent = `Copied the ${view} view. Paste into Figma with Cmd+V.`; }, fallback);
+    } catch (err) {
+      fallback();
+    }
+  });
+})();
+
+render();
+Promise.all([
+  document.fonts.load('600 13.5px "IBM Plex Sans"'),
+  document.fonts.load('500 12px "IBM Plex Sans"'),
+  document.fonts.load('400 11.5px "IBM Plex Sans"'),
+  document.fonts.load('400 10px "IBM Plex Mono"'),
+  document.fonts.load('500 11.5px "IBM Plex Mono"'),
+]).then(render).catch(() => {});
+</script>
+
+</body>
+</html>

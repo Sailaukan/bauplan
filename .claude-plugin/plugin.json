@@ -1,0 +1,12 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "bauplan",
+  "version": "0.1.0",
+  "description": "See how your AI agent actually works: a block-diagram overview and a function-level view of every LLM call, tool call, API call, read and write, checked against the code.",
+  "author": { "name": "Sailaukan", "url": "https://github.com/Sailaukan" },
+  "homepage": "https://github.com/Sailaukan/bauplan",
+  "repository": "https://github.com/Sailaukan/bauplan",
+  "license": "MIT",
+  "keywords": ["agents", "llm", "diagram", "architecture", "documentation", "onboarding"],
+  "skills": ["./"]
+}

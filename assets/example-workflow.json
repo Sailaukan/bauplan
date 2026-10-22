@@ -1,0 +1,181 @@
+{
+  "title": "Support agent: ticket to reply",
+  "repo": { "code_root": "src", "prompts_root": "prompts", "link": "https://github.com/your-org/support-agent/blob/{commit}/{path}#L{line}" },
+  "drawn_at": { "commit": "4f2c9e1", "date": "2026-10-21" },
+  "bands": [
+    {
+      "title": "Each ticket",
+      "note": "One queued job per new ticket.",
+      "main": ["webhook", "receive", "classify", "isHuman", "draft", "send"],
+      "side": [{ "id": "escalate", "under": "isHuman" }]
+    },
+    {
+      "title": "Each sent reply",
+      "note": "Runs after the customer's next message, or after 3 days.",
+      "main": ["outcome", "learn", "done"]
+    }
+  ],
+  "nodes": {
+    "webhook": { "kind": "trigger", "title": "Helpdesk webhook", "note": "a customer opens a ticket" },
+    "receive": {
+      "kind": "block", "num": 1, "title": "Receive the ticket",
+      "items": [["IN", "ticket id from the webhook"], ["API", "Zendesk: ticket, customer, history"], ["WRITE", "Ticket, status received"]],
+      "file": "webhooks/zendesk.ts",
+      "handoff": { "data": "ticket id", "state": "Ticket status received" },
+      "detail": [
+        {
+          "t": "fn", "fn": "POST /webhooks/zendesk → handleTicketCreated(req)", "at": "webhooks/zendesk.ts:18", "note": "Checks the signature, then answers 200 at once.",
+          "calls": [
+            { "t": "if", "cond": "Signature does not match", "at": "webhooks/zendesk.ts:21", "match": "verifySignature", "then": "answer 401", "side": "yes" },
+            {
+              "t": "fn", "fn": "fetchTicket(ticketId)", "returns": "Ticket", "at": "integrations/zendesk.ts:40",
+              "fx": [{ "tag": "API", "title": "Zendesk", "method": "GET", "endpoint": "/api/v2/tickets/{id}?include=users,comments", "text": "ticket, requester, earlier comments" }]
+            },
+            {
+              "t": "do", "title": "Store the ticket", "at": "webhooks/zendesk.ts:30", "match": "db.ticket.upsert",
+              "fx": [{ "tag": "WRITE", "title": "Ticket", "fields": ["external_id", "subject", "body", "customer_id"], "sets": { "status": "received" } }]
+            },
+            { "t": "do", "title": "Queue the ticket", "at": "webhooks/zendesk.ts:34", "match": "queue.add('ticket'" }
+          ]
+        }
+      ]
+    },
+    "classify": {
+      "kind": "block", "num": 2, "title": "Classify the ticket",
+      "items": [["READ", "Customer plan and open orders"], ["LLM", "Claude Haiku: category, urgency"], ["WRITE", "Ticket category, urgency"]],
+      "file": "agents/classify.ts",
+      "handoff": { "data": "ticket id and label", "state": "Ticket status classified" },
+      "detail": [
+        { "t": "task", "name": "ticket job (BullMQ queue 'ticket')", "note": "One job per ticket.", "retries": "3 times with exponential backoff" },
+        {
+          "t": "fn", "fn": "classifyTicket(ticket)", "returns": "TicketLabel", "at": "agents/classify.ts:12",
+          "fx": [{ "tag": "READ", "title": "Customer", "text": "plan and open orders", "fields": ["plan", "orders"] }],
+          "calls": [
+            {
+              "t": "fn", "fn": "callModel({ model: FAST_MODEL, prompt: 'classify.md', schema: TicketLabel })", "returns": "TicketLabel", "at": "llm/client.ts:25", "match": "export async function callModel",
+              "note": "Retries twice, then falls back to the larger model.",
+              "fx": [
+                {
+                  "tag": "LLM", "title": "Claude Haiku 5.5", "model": "claude-haiku-5-5", "prompt": "classify.md", "feature": "ticket_classify", "unit": "ticket", "times": "1",
+                  "threshold": "confidence ≥ 0.7, else category other", "fallbacks": ["claude-sonnet-5-5"],
+                  "schema": { "name": "TicketLabel", "fields": ["category: billing | bug | how_to | other", "urgent: bool", "confidence: float 0–1"] },
+                  "in": "subject, body, plan, last 3 comments", "out": "category, urgent, confidence"
+                },
+                { "tag": "WRITE", "title": "LlmCall", "text": "tokens, cost, latency", "fields": ["model", "input_tokens", "output_tokens", "cost_usd"] }
+              ]
+            },
+            {
+              "t": "do", "title": "Save the label", "at": "agents/classify.ts:31", "match": "db.ticket.update",
+              "fx": [{ "tag": "WRITE", "title": "Ticket", "fields": ["category", "urgent", "label_confidence"], "sets": { "status": "classified" } }]
+            }
+          ]
+        }
+      ]
+    },
+    "isHuman": { "kind": "decision", "title": "Urgent, or asks for a refund over $200?" },
+    "escalate": {
+      "kind": "side", "title": "Hand to a person",
+      "items": [["API", "Zendesk: assign to the on-call group"], ["WRITE", "Ticket status escalated"]],
+      "file": "agents/escalate.ts"
+    },
+    "draft": {
+      "kind": "block", "num": 3, "title": "Draft a reply with tools",
+      "items": [["LLM", "Claude Sonnet, up to 8 turns"], ["CODE", "the model picks tools"], ["READ", "docs search, orders"], ["API", "Stripe refunds under $200"], ["OUT", "draft reply"]],
+      "file": "agents/reply.ts",
+      "handoff": { "data": "draft reply", "state": "Ticket status drafted" },
+      "detail": [
+        {
+          "t": "fn", "fn": "draftReply(ticket, label)", "returns": "Draft", "at": "agents/reply.ts:22",
+          "calls": [
+            {
+              "t": "each", "until": "the model answers without a tool call, at most 8 turns", "at": "agents/reply.ts:41", "match": "for (let turn",
+              "calls": [
+                {
+                  "t": "fn", "fn": "client.messages.create({ model, system, messages, tools })", "at": "agents/reply.ts:43", "match": "messages.create",
+                  "fx": [{
+                    "tag": "LLM", "title": "Claude Sonnet 5.5", "model": "claude-sonnet-5-5", "prompt": "reply-system.md", "feature": "ticket_reply_turn", "unit": "ticket", "times": "1 per turn, at most 8",
+                    "in": "ticket, label, tool results so far", "out": "text, or tool calls"
+                  }]
+                },
+                {
+                  "t": "switch", "on": "What the model asked for", "decided_by": "model", "at": "agents/reply.ts:52", "match": "switch (block.name)",
+                  "cases": [
+                    {
+                      "when": "search_docs(query)",
+                      "rows": [{ "t": "fn", "fn": "searchDocs(query, k = 6)", "returns": "Chunk[]", "at": "tools/search.ts:12",
+                                 "fx": [{ "tag": "LLM", "title": "OpenAI embeddings", "model": "text-embedding-3-small", "prompt": "inline", "feature": "docs_embed_query", "unit": "ticket", "times": "0–8" },
+                                        { "tag": "READ", "title": "pgvector: doc_chunks", "text": "6 nearest chunks", "fields": ["embedding", "text", "url"] }] }]
+                    },
+                    {
+                      "when": "lookup_order(order_id)",
+                      "rows": [{ "t": "fn", "fn": "lookupOrder(orderId)", "returns": "Order", "at": "tools/orders.ts:8",
+                                 "fx": [{ "tag": "READ", "title": "Order", "fields": ["status", "total", "shipped_at"] }] }]
+                    },
+                    {
+                      "when": "refund_order(order_id, amount)", "side": true,
+                      "rows": [
+                        { "t": "if", "cond": "Amount over $200", "at": "tools/billing.ts:19", "match": "amount > REFUND_LIMIT", "then": "refuse; the model is told to escalate", "side": "yes" },
+                        { "t": "fn", "fn": "refundOrder(orderId, amount)", "at": "tools/billing.ts:30", "lock": "Redis lock refund:{orderId}, 30 s",
+                          "risks": ["The $200 limit is only enforced inside the tool; the prompt never states it, so the model can promise a refund before the tool refuses."],
+                          "fx": [{ "tag": "API", "title": "Stripe", "method": "POST", "endpoint": "/v1/refunds" },
+                                 { "tag": "WRITE", "title": "Order", "fields": ["refunded_amount"], "sets": { "refund_status": "refunded" } }] }
+                      ]
+                    },
+                    { "when": "no tool call: the answer", "rows": [{ "t": "end", "text": "leave the loop with the draft" }] }
+                  ]
+                }
+              ]
+            },
+            { "t": "if", "cond": "8 turns used without an answer, or the model API errors twice", "at": "agents/reply.ts:70", "match": "turn === MAX_TURNS", "then": "hand the ticket to a person", "fail": "yes" },
+            {
+              "t": "do", "title": "Save the draft", "at": "agents/reply.ts:76", "match": "db.draft.create",
+              "fx": [{ "tag": "WRITE", "title": "Draft", "fields": ["ticket_id", "body", "tool_calls"] },
+                     { "tag": "WRITE", "title": "Ticket", "fields": ["status"], "sets": { "status": "drafted" } }]
+            }
+          ]
+        }
+      ]
+    },
+    "send": {
+      "kind": "block", "num": 4, "title": "Send the reply",
+      "items": [["IF", "auto-send when confidence ≥ 0.9"], ["PERSON", "else an agent approves or edits"], ["API", "Zendesk: public comment"], ["WRITE", "Ticket status sent"]],
+      "file": "agents/send.ts",
+      "handoff": { "data": "sent reply", "state": "Ticket status sent" },
+      "detail": [
+        {
+          "t": "if", "cond": "Label confidence ≥ 0.9 and no refund in the draft", "at": "agents/send.ts:15", "match": "AUTO_SEND_CONFIDENCE", "side": "no",
+          "yes": [{ "t": "end", "text": "send now" }],
+          "no": [{ "t": "do", "title": "Wait for a person to approve or edit", "at": "agents/send.ts:20", "match": "status: 'awaiting_review'",
+                   "fx": [{ "tag": "WRITE", "title": "Ticket", "fields": ["status"], "sets": { "status": "awaiting_review" } }] }]
+        },
+        {
+          "t": "fn", "fn": "postReply(ticket, draft)", "at": "integrations/zendesk.ts:72",
+          "fx": [{ "tag": "API", "title": "Zendesk", "method": "PUT", "endpoint": "/api/v2/tickets/{id}", "text": "public comment" },
+                 { "tag": "WRITE", "title": "Ticket", "fields": ["status", "sent_at"], "sets": { "status": "sent" } }]
+        }
+      ]
+    },
+    "outcome": {
+      "kind": "block", "num": 5, "title": "Judge the outcome",
+      "items": [["IN", "the customer's next message"], ["LLM", "Claude Haiku: solved or not"], ["WRITE", "Ticket outcome"]],
+      "file": "agents/outcome.ts"
+    },
+    "learn": {
+      "kind": "block", "num": 6, "title": "Add good replies to the docs",
+      "items": [["IF", "solved and rated 5"], ["LLM", "OpenAI embeddings"], ["WRITE", "pgvector: doc_chunks"]],
+      "file": "agents/learn.ts"
+    },
+    "done": { "kind": "output", "title": "Ticket closed", "note": "Solved tickets close; their best replies feed future drafts." }
+  },
+  "edges": [
+    { "from": "webhook", "to": "receive", "kind": "main" },
+    { "from": "receive", "to": "classify", "kind": "main" },
+    { "from": "classify", "to": "isHuman", "kind": "main" },
+    { "from": "isHuman", "to": "draft", "kind": "main", "label": "no" },
+    { "from": "isHuman", "to": "escalate", "kind": "down", "label": "yes" },
+    { "from": "draft", "to": "send", "kind": "main" },
+    { "from": "send", "to": "outcome", "kind": "return", "label": "after the customer answers, or 3 days" },
+    { "from": "outcome", "to": "learn", "kind": "main" },
+    { "from": "learn", "to": "done", "kind": "main" }
+  ]
+}

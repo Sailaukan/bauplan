@@ -1,0 +1,33 @@
+[
+  {
+    "id": "ticket-48213",
+    "name": "Ticket 48213, charged twice (made up)",
+    "source": "an invented run for this example; in your project, take runs from your own database rows, logs or traces",
+    "summary": "Classified billing at 0.91; 4 model turns: searched the docs, looked up the order, refunded $49, answered; a person approved the reply after one edit.",
+    "path": {
+      "receive:0.c0": "no",
+      "draft:0.c0.c1.k2-0": "no",
+      "draft:0.c1": "no",
+      "send:0": "no"
+    },
+    "rows": {
+      "draft:0.c0": "4 turns",
+      "draft:0.c0.c1": "turn 1 search_docs, turn 2 lookup_order, turn 3 refund_order, turn 4 the answer",
+      "send:0.n0": "approved after one edit, 6 minutes later"
+    },
+    "fx": {
+      "receive:0.c1#0": { "out": "“Charged twice for my March invoice”, customer on the Pro plan, 2 earlier tickets" },
+      "classify:1.c0#0": { "in": "subject, body, plan Pro, last 3 comments", "out": "billing, urgent false, confidence 0.91", "note": "934 tokens in, 0.8 s" },
+      "draft:0.c0.c0#0": { "note": "4 turns, 15,210 tokens in, 1,180 out, 11.6 s in all" },
+      "draft:0.c0.c1.k0-0#1": { "out": "6 chunks, the best “Duplicate charges and refunds”" },
+      "draft:0.c0.c1.k1-0#0": { "out": "order A-7731, $49.00, charged twice on 2 Mar" },
+      "draft:0.c0.c1.k2-1#0": { "in": "order A-7731, $49.00", "out": "refund created" },
+      "send:1#0": { "in": "the reply, edited by the person" }
+    },
+    "calls": {
+      "ticket_classify": { "count": 1, "cost_usd": 0.0011 },
+      "ticket_reply_turn": { "count": 4, "cost_usd": 0.0631 },
+      "docs_embed_query": { "count": 1, "cost_usd": 0.0000004 }
+    }
+  }
+]
