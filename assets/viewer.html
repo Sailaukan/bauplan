@@ -1296,6 +1296,7 @@ function buildRisksPage() {
 const fromRoot = (root, path) => [root, path].filter(Boolean).join('/');
 function fxText(fx) {
   const sets = Object.entries(fx.sets || {}).map(([k, v]) => `${k} → ${Array.isArray(v) ? v.join(' or ') : v}`).join(', ');
+  const fallbacks = [].concat(fx.fallbacks || []).join(', ');
   return [
     `${fx.tag} ${fx.title}${fx.model ? ` (\`${fx.model}\`)` : ''}`,
     (fx.method || fx.endpoint) && `\`${`${fx.method || ''} ${fx.endpoint || ''}`.trim()}\``,
@@ -1303,7 +1304,7 @@ function fxText(fx) {
     fx.schema && `output ${[fx.schema.name, (fx.schema.fields || []).join('; ')].filter(Boolean).join(': ')}`,
     fx.times && `runs ${fx.times} per ${fx.unit || 'run'}`,
     fx.threshold && `rule: ${fx.threshold}`,
-    (fx.fallbacks || []).length && `falls back to ${fx.fallbacks.join(', ')}`,
+    fallbacks && `falls back to ${fallbacks}`,
     fx.feature && `logged as \`${fx.feature}\``,
     (fx.fields || []).length && `fields: ${fx.fields.join(', ')}`,
     sets && `sets ${sets}`,
@@ -1385,7 +1386,7 @@ function cardHTML(fxId) {
   const dl = [];
   const add = (k, v) => { if (v != null && v !== '' && !(Array.isArray(v) && !v.length)) dl.push(`<dt>${esc(k)}</dt><dd>${v}</dd>`); };
   add('Model', fx.model ? `<span class="mono">${esc(fx.model)}</span>` : '');
-  add('Falls back to', (fx.fallbacks || []).map(m => `<span class="mono">${esc(m)}</span>`).join(', '));
+  add('Falls back to', [].concat(fx.fallbacks || []).map(m => `<span class="mono">${esc(m)}</span>`).join(', '));
   add('Request', fx.method || fx.endpoint ? `<span class="mono">${esc(`${fx.method || ''} ${fx.endpoint || ''}`.trim())}</span>` : '');
   add('Runs', fx.times ? `${esc(fx.times)} per ${esc(fx.unit || 'run')}` : '');
   add('Rule on the answer', fx.threshold ? esc(fx.threshold) : '');

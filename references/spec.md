@@ -141,7 +141,7 @@ returns a decision.
 - `feature`: the name the code logs usage under, so usage numbers can be joined. Use the logging name exactly.
 - `unit` and `times`: how often it runs. `unit` is the band's unit (`ticket`, `document`); `times` is `"1"`,
   `"0–1"`, `"1 per attachment"`, `"1 per turn, at most 8"`.
-- `threshold`?: the rule applied to the answer: `"confidence ≥ 0.7"`. `fallbacks`?: models tried when it fails.
+- `threshold`?: the rule applied to the answer: `"confidence ≥ 0.7"`. `fallbacks`?: a list of the models tried when it fails.
 
 **API** covers every other service: payment, email, search, CRMs, MCP servers, other agents.
 - `title`: the service (`Stripe`, `Gmail API`, `MCP: github`). `method` and `endpoint`: `"POST"`, `"/v1/refunds"`.
