@@ -32,6 +32,7 @@ One page, `docs/agent-workflow/index.html`, with five views:
 - **Click through.** Every function opens its line on GitHub, GitLab or in your editor; every call opens a card with its prompt, output schema and usage.
 - **Checked against the code.** The page says how many rows were found, which moved, and which blocks changed since the diagram was drawn. In CI, `check` fails when something it names is gone.
 - **Copy to Figma.** One button copies the overview or the detailed view as an SVG that pastes into Figma as editable shapes.
+- **Copy to a coding agent.** Each block, or the whole workflow, copies as Markdown: the overview as a Mermaid flowchart, each block's steps with their files and lines, to paste into Claude Code or any other agent.
 
 ![Model calls per unit of work, with usage numbers and the example run's calls](docs/images/model-calls.png)
 

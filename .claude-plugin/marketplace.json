@@ -10,7 +10,7 @@
       "name": "bauplan",
       "source": "./",
       "description": "See how your AI agent actually works: a block-diagram overview and a function-level view of every LLM call, tool call, API call, read and write, checked against the code.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

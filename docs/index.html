@@ -63,7 +63,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible, [data-block]:focus-visible, [data-fx]:focus-visible {
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible, [data-block]:focus-visible, [data-fx]:focus-visible, [data-copy]:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
 
@@ -144,6 +144,15 @@ figure { margin: 6px 0 0; }
 [data-block]:hover > rect:first-child, [data-fx]:hover rect.cell { stroke: var(--accent); stroke-width: 2px; }
 svg.filtering [data-fx]:not(.hl) { opacity: 0.14; }
 svg.filtering [data-fx].hl rect.cell { stroke-width: 2.5px; }
+/* Copy buttons in the diagram; on the overview one shows while its block is hovered or focused. */
+[data-copy] { cursor: pointer; }
+[data-copy] .cp-box { fill: var(--c-card); stroke: var(--c-cardLine); }
+[data-copy]:hover .cp-box { stroke: var(--accent); }
+[data-copy] .cp-ico { fill: none; stroke: var(--c-muted); stroke-width: 1.3px; }
+[data-copy] text { fill: var(--c-muted); }
+[data-block] [data-copy] { opacity: 0; }
+[data-block]:hover [data-copy], [data-block]:focus-within [data-copy] { opacity: 1; }
+@media (hover: none) { [data-block] [data-copy] { display: none; } }
 figcaption { color: var(--muted); font-size: 13px; margin-top: 10px; max-width: 84ch; }
 code { font-family: var(--mono); font-size: 0.9em; }
 
@@ -299,6 +308,7 @@ tr.clickable:hover td { background: var(--seg); }
         <summary class="ghost">Legend</summary>
         <div class="panel legend" id="legend"></div>
       </details>
+      <button id="copy-md" class="ghost" type="button" title="Copies this view as Markdown, the overview as a Mermaid flowchart, to paste into a coding agent">Copy Markdown</button>
       <button id="copy" class="ghost" type="button" title="Copies this diagram as SVG; paste it into Figma as editable shapes">Copy SVG</button>
     </div>
   </div>
@@ -328,7 +338,7 @@ tr.clickable:hover td { background: var(--seg); }
 <main>
   <div class="wrap lead">
     <p id="example-line" hidden></p>
-    <textarea id="fallback" hidden readonly aria-label="SVG markup"></textarea>
+    <textarea id="fallback" hidden readonly aria-label="Copied text"></textarea>
   </div>
   <figure id="figure" class="wrap">
     <div class="scroll" id="diagram"></div>
@@ -552,6 +562,17 @@ function svgShell(width, height, aria, body, R) {
     + `<rect x="0" y="0" width="${width}" height="${r(height)}" ${R.paint('bg')}/>` + body + `</svg>`;
 }
 
+// Copies a block as Markdown. Drawn on the page only, never into the SVG export; x, y is its top-left corner.
+function copyButton(id, x, y, label = '') {
+  const w = label ? r(30 + measure(label, 11.5, 500)) : 24;
+  return `<g data-copy="${esc(id)}" tabindex="0" role="button" aria-label="Copy ${esc(blockLabel(id))} as Markdown"><title>Copy as Markdown</title>`
+    + `<rect class="cp-box" x="${r(x + 0.5)}" y="${r(y + 0.5)}" width="${w - 1}" height="21" rx="5"/>`
+    + `<rect class="cp-ico" x="${r(x + 9.5)}" y="${r(y + 7.5)}" width="8" height="9" rx="1.5"/>`
+    + `<path class="cp-ico" d="M${r(x + 6.5)} ${r(y + 13.5)} V${r(y + 6)} a1.5 1.5 0 0 1 1.5 -1.5 H${r(x + 14)}"/>`
+    + (label ? `<text x="${r(x + 23)}" y="${r(y + 15)}" font-family='${FONT}' font-size="11.5" font-weight="500">${esc(label)}</text>` : '')
+    + `</g>`;
+}
+
 function legendRow(R, items, y) {
   const out = [];
   let lx = M;
@@ -615,7 +636,7 @@ function shapeGlyph(R, shape) {
 }
 
 // ── Overview ────────────────────────────────────────────────────────────────
-function buildNode(n, w, R, changed) {
+function buildNode(n, w, R, changed, id) {
   const pad = 12, inner = w - 2 * pad;
   if (n.kind === 'decision') {
     const lines = wrap(n.title, inner - 16, 12, 500);
@@ -640,9 +661,11 @@ function buildNode(n, w, R, changed) {
     y += 15;
   }
   const tsize = n.kind === 'side' ? 12.5 : 13.5;
-  const titleLines = wrap(n.title, inner - (n.num ? 22 : 0), tsize, 600);
+  // The top-right corner holds the block's number, and on the page its copy button.
+  const titleLines = wrap(n.title, inner - (n.num || n.detail ? 22 : 0), tsize, 600);
   titleLines.forEach((ln, i) => { const yy = y + i * 17 + 13; ops.push(() => R.text(pad, yy, ln, { size: tsize, weight: 600 })); });
   if (n.num) { const yy = y + 12; ops.push(() => R.text(w - pad, yy, String(n.num).padStart(2, '0'), { size: 10.5, color: 'faint', family: MONO, anchor: 'end' })); }
+  const copyY = y - 3;
   y += titleLines.length * 17;
   if (n.note) {
     y += 2;
@@ -678,6 +701,7 @@ function buildNode(n, w, R, changed) {
         s += `<line x1="${pad}" x2="${w - pad}" y1="${r(fy - 6)}" y2="${r(fy - 6)}" ${R.paint(null, 'bandLine', 1)}/>`;
         s += fileLines.map((ln, i) => R.text(pad, fy + i * 13 + 9.5, ln, { size: 10, color: 'faint', family: MONO })).join('');
       }
+      if (R.mode === 'page' && n.detail) s += copyButton(id, w - 30, copyY);
       return s;
     },
   };
@@ -707,7 +731,7 @@ function buildOverview(mode) {
     const y0 = y, rowTop = y0 + 50, arrowY = rowTop + 26;
     const items = band.main.map(id => {
       const n = SPEC.nodes[id], w = n.w || SIZES[n.kind] || SIZES.block;
-      return { id, n, w, b: buildNode(n, w, R, changedIds.has(id)) };
+      return { id, n, w, b: buildNode(n, w, R, changedIds.has(id), id) };
     });
     // A short band keeps its blocks together instead of spreading them over the full width.
     const gap = items.length > 1 ? Math.min(72, (CW - items.reduce((a, it) => a + it.w, 0)) / (items.length - 1)) : 0;
@@ -727,7 +751,7 @@ function buildOverview(mode) {
       const sideTop = bottom + 46;
       let sideH = 0;
       band.side.forEach(sd => {
-        const n = SPEC.nodes[sd.id], w = n.w || SIZES.side, b = buildNode(n, w, R, changedIds.has(sd.id)), p = pos[sd.under];
+        const n = SPEC.nodes[sd.id], w = n.w || SIZES.side, b = buildNode(n, w, R, changedIds.has(sd.id), sd.id), p = pos[sd.under];
         const sx = Math.max(CONTENT_X, Math.min(p.x + p.w / 2 - w / 2, CONTENT_X + CW - w));
         pos[sd.id] = { x: sx, y: sideTop, w, h: b.h, band };
         const link = mode === 'page' && n.detail
@@ -1067,6 +1091,7 @@ function buildDetailed(mode, only) {
       + R.text(M + 40, headerY + 23, n.title, { size: 14, weight: 600 })
       + (changed.length ? R.text(M + 48 + measure(n.title, 14, 600), headerY + 23, 'changed since drawn', { size: 11, weight: 600, color: 'warn' }) : '')
       + ['llm', 'api', 'db'].map(k => R.text(LANES[k].x + LANES[k].w / 2, headerY + 22.5, LANES[k].title, { size: 10, weight: 600, color: LANES[k].color, anchor: 'middle', spacing: 1 })).join('')
+      + (mode === 'page' ? copyButton(id, LANES.code.x + LANES.code.w - 66, headerY + 7, 'Copy') : '')
       + `</g>`;
     out.push(lanes + header + ctx.out.join(''));
     y = laneBottom + 30;
@@ -1273,6 +1298,93 @@ function buildRisksPage() {
     + `</tbody></table></div>`;
 }
 
+// ── Markdown for a coding agent ─────────────────────────────────────────────
+// The overview as a Mermaid flowchart; each block as a nested list of its steps in the order the code runs, with
+// every call out and the file and line each step is at, written from the repository root.
+const fromRoot = (root, path) => [root, path].filter(Boolean).join('/');
+function fxText(fx) {
+  const sets = Object.entries(fx.sets || {}).map(([k, v]) => `${k} → ${Array.isArray(v) ? v.join(' or ') : v}`).join(', ');
+  return [
+    `${fx.tag} ${fx.title}${fx.model ? ` (\`${fx.model}\`)` : ''}`,
+    (fx.method || fx.endpoint) && `\`${`${fx.method || ''} ${fx.endpoint || ''}`.trim()}\``,
+    fx.prompt && (fx.prompt === 'inline' ? 'prompt built in the code' : `prompt \`${fromRoot(SPEC.repo.prompts_root ?? 'prompts', fx.prompt)}\``),
+    fx.schema && `output ${[fx.schema.name, (fx.schema.fields || []).join('; ')].filter(Boolean).join(': ')}`,
+    fx.times && `runs ${fx.times} per ${fx.unit || 'run'}`,
+    fx.threshold && `rule: ${fx.threshold}`,
+    (fx.fallbacks || []).length && `falls back to ${fx.fallbacks.join(', ')}`,
+    fx.feature && `logged as \`${fx.feature}\``,
+    (fx.fields || []).length && `fields: ${fx.fields.join(', ')}`,
+    sets && `sets ${sets}`,
+    fx.text,
+    fx.in && `sends: ${fx.in}`,
+    fx.out && `gets back: ${fx.out}`,
+  ].filter(Boolean).join(' · ');
+}
+function rowsText(rows, depth, out) {
+  const pad = '  '.repeat(depth);
+  const off = (fail, side) => (fail ? ' (on failure)' : side ? ' (off the main path)' : '');
+  const branch = (label, sub) => { out.push(`${pad}  - ${label}:`); rowsText(sub, depth + 2, out); };
+  (rows || []).forEach(row => {
+    // `then` is the outcome of a branch with no rows of its own, so it carries that branch's mark.
+    const bare = field => field && !(row[field] || []).length;
+    const head = {
+      task: `Queued task \`${row.name}\``,
+      fn: `\`${row.fn}\`${row.returns ? ` → ${row.returns}` : ''}`,
+      do: row.title,
+      if: `If: ${row.cond}`,
+      switch: `Switch: ${row.on}`,
+      each: loopText(row),
+      end: `→ ${row.text}`,
+    }[row.t];
+    out.push(pad + '- ' + [
+      head,
+      row.at && `\`${fromRoot(SPEC.repo.code_root, row.at)}\``,
+      row.decided_by === 'model' && 'decided by the model',
+      row.then && `→ ${row.then}${off(bare(row.fail), bare(row.side))}`,
+      row.note,
+      row.retries && `retries: ${row.retries}`,
+      row.lock && `lock: ${row.lock}`,
+      row.parallel && `parallel: ${row.parallel}`,
+      ...(row.risks || []).map(risk => `RISK: ${risk}`),
+    ].filter(Boolean).join(' · '));
+    (row.fx || []).forEach(fx => out.push(`${pad}  - ${fxText(fx)}`));
+    [['yes', 'If yes'], ['no', 'If no']].forEach(([field, label]) => {
+      if ((row[field] || []).length) branch(label + off(row.fail === field, row.side === field), row[field]);
+    });
+    (row.cases || []).forEach(c => branch(`When ${c.when}${off(c.fail, c.side)}`, c.rows));
+    rowsText(row.calls, depth + 1, out);
+  });
+  return out;
+}
+function blockText(id) {
+  const n = SPEC.nodes[id], band = SPEC.bands[NODE_BAND[id]];
+  const out = [`## ${blockLabel(id)}`, ''];
+  if (band) out.push(`${band.title}.${band.note ? ` ${band.note}` : ''}`);
+  if (n.file) out.push(`File: \`${fromRoot(SPEC.repo.code_root, n.file)}\``);
+  if (n.note) out.push(n.note);
+  if ((n.items || []).length) out.push('', ...n.items.map(([tag, text]) => `- ${tag}: ${text}`));
+  if (n.detail) out.push('', 'Steps, in the order the code runs:', ...rowsText(n.detail, 0, []));
+  if (n.handoff) out.push('', `Hands on: ${n.handoff.data}${n.handoff.state ? `; ${n.handoff.state}` : ''}`);
+  return out.join('\n');
+}
+function workflowText() {
+  const d = SPEC.drawn_at || {};
+  const label = s => `"${String(s).replace(/"/g, '#quot;')}"`;
+  const mid = id => `n_${id.replace(/\W/g, '_')}`;
+  const shape = id => ({ decision: `{${label(blockLabel(id))}}`, trigger: `([${label(blockLabel(id))}])` }[SPEC.nodes[id].kind] || `[${label(blockLabel(id))}]`);
+  const bandIds = band => [...band.main, ...(band.side || []).map(sd => sd.id)].filter(id => SPEC.nodes[id]);
+  const chart = ['flowchart LR'];
+  SPEC.bands.forEach((band, i) => chart.push(`  subgraph band${i}[${label(band.title)}]`, ...bandIds(band).map(id => `    ${mid(id)}${shape(id)}`), '  end'));
+  SPEC.edges.forEach(e => chart.push(`  ${mid(e.from)} ${e.dashed ? '-.->' : '-->'}${e.label ? `|${label(e.label)}|` : ''} ${mid(e.to)}`));
+  const blocks = SPEC.bands.flatMap(bandIds).filter(id => SPEC.nodes[id].detail || (SPEC.nodes[id].items || []).length);
+  return [
+    `# ${SPEC.title}`, '',
+    `Traced at commit ${d.commit || '?'}${d.date ? `, ${d.date}` : ''}. Paths are from the repository root.`, '',
+    '```mermaid', ...chart, '```',
+    ...blocks.map(id => `\n${blockText(id)}`),
+  ].join('\n');
+}
+
 // ── Card drawer ─────────────────────────────────────────────────────────────
 function cardHTML(fxId) {
   const item = FX[fxId];
@@ -1426,6 +1538,7 @@ function render() {
   document.getElementById('figure').hidden = !svgView;
   document.getElementById('page').hidden = svgView;
   document.getElementById('copy').hidden = !svgView;
+  document.getElementById('copy-md').hidden = !svgView;
   document.getElementById('legend-pop').hidden = !svgView;
   if (svgView) document.getElementById('legend').innerHTML = legendHTML(view);
   // The toolbar holds only what this view uses: block, paths and highlight on Detailed; example runs on Detailed and Model calls.
@@ -1480,6 +1593,8 @@ function show(next, opts = {}) {
   VIEWS.forEach(v => document.getElementById(`tab-${v}`).addEventListener('click', () => show(v)));
   const diagram = document.getElementById('diagram');
   diagram.addEventListener('click', e => {
+    const copy = e.target.closest('[data-copy]');
+    if (copy) { copyBlock(copy.dataset.copy); return; }
     const block = e.target.closest('[data-block]');
     if (block) { show('detailed', { only: block.dataset.block }); return; }
     const fx = e.target.closest('[data-fx]');
@@ -1487,10 +1602,12 @@ function show(next, opts = {}) {
   });
   diagram.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
+    const copy = e.target.closest('[data-copy]');
     const block = e.target.closest('[data-block]');
     const fx = e.target.closest('[data-fx]');
-    if (block || fx) e.preventDefault();
-    if (block) show('detailed', { only: block.dataset.block });
+    if (copy || block || fx) e.preventDefault();
+    if (copy) copyBlock(copy.dataset.copy);
+    else if (block) show('detailed', { only: block.dataset.block });
     else if (fx) openCard(fx.dataset.fx);
   });
   document.getElementById('page').addEventListener('click', e => {
@@ -1512,22 +1629,35 @@ function show(next, opts = {}) {
   });
   document.getElementById('copy').addEventListener('click', () => {
     const svg = view === 'overview' ? buildOverview('export') : buildDetailed('export', only);
-    const status = document.getElementById('status');
-    const fallback = () => {
-      const box = document.getElementById('fallback');
-      box.hidden = false;
-      box.value = svg;
-      box.focus();
-      box.select();
-      status.textContent = 'Copy the selected SVG below, then paste it into Figma.';
-    };
-    try {
-      navigator.clipboard.writeText(svg).then(() => { status.textContent = `Copied the ${view} view. Paste into Figma with Cmd+V.`; }, fallback);
-    } catch (err) {
-      fallback();
-    }
+    copyOut(svg, `Copied the ${view} view. Paste into Figma with Cmd+V.`, 'Copy the selected SVG below, then paste it into Figma.');
+  });
+  // One block when Detailed shows one; otherwise the whole workflow.
+  document.getElementById('copy-md').addEventListener('click', () => {
+    if (view === 'detailed' && only) copyBlock(only);
+    else copyOut(workflowText(), 'Copied the workflow as Markdown. Paste it into your coding agent.', 'Copy the selected Markdown below.');
   });
 })();
+
+// Where the clipboard is blocked, the text goes in a box, selected, to copy by hand.
+function copyOut(text, done, manual) {
+  const status = document.getElementById('status');
+  const fallback = () => {
+    const box = document.getElementById('fallback');
+    box.hidden = false;
+    box.value = text;
+    box.focus();
+    box.select();
+    status.textContent = manual;
+  };
+  try {
+    navigator.clipboard.writeText(text).then(() => { status.textContent = done; }, fallback);
+  } catch (err) {
+    fallback();
+  }
+}
+function copyBlock(id) {
+  copyOut(blockText(id), `Copied ${blockLabel(id)} as Markdown.`, 'Copy the selected Markdown below.');
+}
 
 render();
 Promise.all([
