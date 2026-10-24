@@ -241,8 +241,67 @@ tr.clickable:hover td { background: var(--seg); }
 .nums { padding-top: 1px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .nums .run { color: var(--run); font-weight: 500; }
 .nums i { display: none; margin-right: 4px; color: var(--faint); font-style: normal; }
+.nums > span { display: grid; gap: 4px; justify-items: end; }
+.nums .meter { width: 100%; height: 3px; border-radius: 2px; background: var(--rule); overflow: hidden; }
+.nums .meter b { display: block; height: 100%; border-radius: 0 2px 2px 0; background: var(--faint); }
+/* Model colours: a fixed categorical order, assigned by where each model is first called in the workflow. */
+:root { --m1: #2a78d6; --m2: #eb6834; --m3: #1baf7a; --m4: #eda100; --m5: #e87ba4; --m6: #008300; --m7: #6250d6; --m8: #e34948; --m0: #a3acb9; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --m1: #3987e5; --m2: #d95926; --m3: #199e70; --m4: #c98500; --m5: #d55181; --m6: #008300; --m7: #9085e9; --m8: #e66767; --m0: #5b6574; }
+}
+:root[data-theme="dark"] { --m1: #3987e5; --m2: #d95926; --m3: #199e70; --m4: #c98500; --m5: #d55181; --m6: #008300; --m7: #9085e9; --m8: #e66767; --m0: #5b6574; }
+.sw { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 2px; }
+.what .l1 .sw { align-self: center; margin-right: -4px; }
+.chips .sw { margin-right: 6px; vertical-align: -1px; }
+/* The whole picture: headline numbers, then where the spend goes and how it splits by model. */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.kpi { display: grid; gap: 2px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; }
+.kpi span { color: var(--muted); font-size: 12.5px; }
+.kpi b { font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+.kpi small { color: var(--muted); font-size: 12px; }
+.viz-row { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 10px; align-items: start; }
+@media (max-width: 900px) { .viz-row { grid-template-columns: minmax(0, 1fr); } }
+.viz { margin: 0; display: grid; gap: 14px; align-content: start; padding: 16px 18px 18px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; min-width: 0; }
+.viz h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.viz h3 small { display: block; margin-top: 2px; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.hbars { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hbars li { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); align-items: center; gap: 12px; padding: 3px 4px; border-radius: 5px; }
+.hbars li:hover, .hbars li:focus-visible, .shares [data-tip]:hover { background: var(--seg); }
+.hbars .lbl { display: flex; align-items: center; gap: 6px; min-width: 0; font: 12px/1.3 var(--mono); }
+.hbars .lbl code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.hbars .lbl .blk { flex: none; cursor: default; }
+.hbars .lbl.rest { font-family: var(--font); color: var(--muted); }
+.hbars .track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hbars .bar { flex: none; height: 12px; min-width: 2px; border-radius: 0 4px 4px 0; }
+.hbars .val { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hbars .val b { color: var(--fg); font-weight: 500; }
+@media (max-width: 600px) { .hbars li { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.viz .dim, .shares .dim { opacity: 0.25; }
+.shares { display: grid; gap: 12px; }
+.share { display: grid; gap: 5px; }
+.share > span { color: var(--muted); font-size: 12px; }
+.stack { display: flex; gap: 2px; height: 14px; }
+.stack i { display: block; min-width: 2px; height: 100%; }
+.stack i:first-child { border-radius: 4px 0 0 4px; }
+.stack i:last-child { border-radius: 0 4px 4px 0; }
+.stack i:only-child { border-radius: 4px; }
+.mlist { width: 100%; font-size: 12.5px; }
+.mlist td, .mlist th { padding: 5px 8px 5px 0; }
+.mlist th:not(:first-child), .mlist td.num { text-align: right; }
+.mlist td:first-child { display: flex; align-items: center; gap: 7px; }
+.mlist tr[data-model] { cursor: pointer; }
+.mlist tr[data-model]:hover td { background: var(--seg); }
+.viz-note { margin: 0; color: var(--muted); font-size: 12px; }
+#tip { position: fixed; z-index: 30; pointer-events: none; max-width: 300px; padding: 9px 11px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 10px 28px rgba(15, 20, 30, 0.16); font-size: 12.5px; }
+#tip[hidden] { display: none; }
+#tip b { display: block; font-size: 15px; font-weight: 600; }
+#tip .t { margin-bottom: 6px; color: var(--muted); }
+#tip dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; }
+#tip dt { color: var(--muted); }
+#tip dd { margin: 0; font-variant-numeric: tabular-nums; }
 @media (max-width: 760px) {
   .unit header { padding-left: 16px; }
+  .nums > span { justify-items: start; min-width: 80px; }
   .unit header .cols { display: none; }
   .call { grid-template-columns: 30px minmax(0, 1fr); }
   .nums { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 14px; text-align: left; }
@@ -340,6 +399,7 @@ tr.clickable:hover td { background: var(--seg); }
 </main>
 
 <aside id="card" hidden aria-label="Call details"></aside>
+<div id="tip" hidden role="tooltip"></div>
 
 <script>
 const DATA = /*__DATA__*/null;
@@ -400,13 +460,12 @@ const TAG_W = 54;
 const IND = 24;
 // Detailed view: the code column, then one column per place a call goes.
 const LANES = {
-  code: { x: M, w: 560 },
-  llm: { x: 640, w: 210, title: 'LLM', color: 'llm' },
-  api: { x: 870, w: 210, title: 'EXTERNAL API', color: 'api' },
-  db: { x: 1100, w: 210, title: 'DATABASE & FILES', color: 'data' },
+  code: { x: M, w: 520 },
+  llm: { x: 596, w: 222, title: 'LLM', color: 'llm' },
+  api: { x: 842, w: 222, title: 'EXTERNAL API', color: 'api' },
+  db: { x: 1088, w: 222, title: 'DATABASE & FILES', color: 'data' },
 };
 const LANE_OF = { LLM: 'llm', API: 'api', READ: 'db', WRITE: 'db' };
-const HEAD_OF = { LLM: 'both', API: 'both', READ: 'start', WRITE: 'end' };
 
 (function themeTokens() {
   const vars = i => Object.entries(P).map(([k, v]) => `--c-${k}:${v[i]}`).join(';');
@@ -595,9 +654,9 @@ function legendItems(view, R) {
     { glyph: shapeGlyph(R, 'loop'), label: 'loop' },
     { glyph: shapeGlyph(R, 'faded'), label: 'off the main path' },
     { glyph: shapeGlyph(R, 'failure'), label: 'on failure' },
-    { glyph: shapeGlyph(R, 'write'), label: 'data goes out' },
-    { glyph: shapeGlyph(R, 'read'), label: 'data comes back' },
-    { glyph: shapeGlyph(R, 'call'), label: 'request and answer' },
+    { glyph: shapeGlyph(R, 'write'), label: 'sends or writes' },
+    { glyph: shapeGlyph(R, 'read'), label: 'returns or reads' },
+    { glyph: shapeGlyph(R, 'call'), label: 'a call: request out, answer back' },
   ];
 }
 
@@ -622,8 +681,8 @@ function shapeGlyph(R, shape) {
     if (shape === 'failure') return R.vline(x + 4, y, y + 16, 'person', '3 3') + `<g opacity="0.5"><rect x="${x + 9.5}" y="${y + 0.5}" width="16" height="15" rx="3" ${R.paint('card', 'cardLine', 1)}/></g>`;
     if (shape === 'start') return `<rect x="${x + 0.75}" y="${y + 0.75}" width="24.5" height="14.5" rx="7" ${R.paint('card', 'ink', 1.5)}/>`;
     if (shape === 'loop') return `<rect x="${x + 0.5}" y="${y + 0.5}" width="25" height="15" rx="3" ${R.paint('card', 'code', 1.2)} stroke-dasharray="2 2"/>`;
-    const heads = { write: 'end', read: 'start', call: 'both' }[shape];
-    return R.arrow([[x + 1, y + 8], [x + 25, y + 8]], { head: heads });
+    if (shape === 'call') return R.arrow([[x + 1, y + 4], [x + 25, y + 4]], { head: 'end' }) + R.arrow([[x + 1, y + 12.5], [x + 25, y + 12.5]], { head: 'start' });
+    return R.arrow([[x + 1, y + 8], [x + 25, y + 8]], { head: shape === 'write' ? 'end' : 'start' });
   };
 }
 
@@ -875,8 +934,24 @@ function statsLine(fx) {
   return bits.join(' · ');
 }
 
+// What crosses the boundary, as labelled sections the arrows land on: what the code sends to a model or service and
+// what comes back, or the fields it reads from or writes to a table or store.
+const schemaText = schema => [schema.name, (schema.fields || []).map(f => f.split(':')[0].trim()).join(', ')].filter(Boolean).join(': ');
+function payload(fx) {
+  const fields = (fx.fields || []).join(', ');
+  if (fx.tag === 'LLM') {
+    const prompt = fx.prompt === 'inline' ? 'a prompt built in the code' : fx.prompt ? `the prompt ${fx.prompt.split('/').pop()}` : '';
+    return { send: fx.in || prompt, back: fx.out || (fx.schema ? schemaText(fx.schema) : '') };
+  }
+  if (fx.tag === 'API') return { request: `${fx.method || ''} ${fx.endpoint || ''}`.trim(), send: fx.in, back: fx.out };
+  // A table read or write names its fields; without them its text says what it reads or writes.
+  return { fields: fields || fx.text, note: fields ? fx.text : '', sets: fx.sets };
+}
+
+const LABEL_W = 52;
 function buildEffectCell(fx, w, R, run) {
   const pad = 10, inner = w - 2 * pad, ops = [];
+  const color = TAGS[fx.tag].color;
   // A name too long to sit beside the tag (MailboxInboundAttachment) goes on the line below it.
   const beside = inner - TAG_W - 6;
   const fits = String(fx.title).split(' ').every(token => measure(token, 12, 600) <= beside);
@@ -889,44 +964,64 @@ function buildEffectCell(fx, w, R, run) {
     lines.forEach((ln, i) => ops.push(() => R.text(x, top + i * lh + lh * 0.78, ln, o)));
     y += lines.length * lh;
   };
-  if (fx.method || fx.endpoint) { y += 3; push(wrap(`${fx.method || ''} ${fx.endpoint || ''}`.trim(), inner, 10.5, 400, MONO, true), { size: 10.5, family: MONO }, 13.5); }
-  if (fx.prompt && fx.prompt !== 'inline') { y += 3; push(wrap(fx.prompt, inner, 10, 400, MONO, true), { size: 10, color: 'faint', family: MONO }, 13); }
-  if (fx.text) { y += 3; push(wrap(fx.text, inner, 11), { size: 11, color: 'muted' }, 14); }
-  if (fx.sets) {
-    Object.entries(fx.sets).forEach(([field, value]) => {
-      y += 3;
-      const v = Array.isArray(value) ? value.join(' or ') : value;
-      push(wrap(`${field} → ${v}`, inner, 10.5, 500, MONO), { size: 10.5, weight: 500, color: 'data', family: MONO }, 13.5);
-    });
-  }
-  if (fx.fields && fx.fields.length && fx.tag !== 'LLM') { y += 3; push(wrap(fx.fields.join(', '), inner, 10, 400, MONO), { size: 10, color: 'faint', family: MONO }, 13); }
-  [['in', fx.in], ['out', fx.out]].forEach(([label, value]) => {
-    if (!value) return;
-    y += 4;
+  // A labelled section; returns the height its arrow meets the card at.
+  const section = (label, value, o = {}, labelColor = color) => {
+    y += 5;
     const top = y;
-    ops.push(() => R.text(pad, top + 10.5, label.toUpperCase(), { size: 8.5, weight: 600, color: 'faint', spacing: 0.6 }));
-    push(wrap(value, inner - 28, 11), { size: 11 }, 14, pad + 28);
+    const mono = o.family === MONO;
+    if (label) ops.push(() => R.text(pad, top + 10.5, label, { size: 8.5, weight: 600, color: labelColor, spacing: 0.6 }));
+    push(wrap(value, inner - LABEL_W, o.size || 11, o.weight || 400, o.family || FONT), { size: 11, ...o }, mono ? 13.5 : 14, pad + LABEL_W);
+    return top + 7.5;
+  };
+  const p = payload(fx);
+  const anchors = {};
+  if (fx.text && (fx.tag === 'LLM' || fx.tag === 'API')) { y += 3; push(wrap(fx.text, inner, 11), { size: 11, color: 'muted' }, 14); }
+  if (p.note) { y += 3; push(wrap(p.note, inner, 11), { size: 11, color: 'muted' }, 14); }
+  if (p.request) anchors.send = section('REQUEST', p.request, { size: 10.5, family: MONO });
+  if (p.send) {
+    const at = section('SENDS', p.send);
+    anchors.send = anchors.send || at;
+  }
+  if (p.back) anchors.back = section('RETURNS', p.back);
+  if (p.fields) anchors.data = section(fx.tag === 'READ' ? 'READS' : 'WRITES', p.fields, (fx.fields || []).length ? { size: 10.5, family: MONO } : {});
+  Object.entries(p.sets || {}).forEach(([field, value], i) => {
+    const v = Array.isArray(value) ? value.join(' or ') : value;
+    const at = section(i ? '' : 'SETS', `${field} → ${v}`, { size: 10.5, weight: 500, family: MONO, color: 'data' });
+    anchors.data = anchors.data || at;
   });
+  if (fx.tag === 'LLM' && fx.prompt && fx.prompt !== 'inline' && fx.in) { y += 4; push(wrap(fx.prompt, inner, 10, 400, MONO, true), { size: 10, color: 'faint', family: MONO }, 13); }
   const stats = statsLine(fx);
-  if (stats) { y += 4; push(wrap(stats, inner, 10.5), { size: 10.5, color: 'llm' }, 13.5); }
+  if (stats) { y += 4; push(wrap(stats, inner, 10.5), { size: 10.5, color: 'muted' }, 13.5); }
   if (run) {
     y += 6;
     const top = y;
     ops.push(() => `<line x1="${pad}" x2="${w - pad}" y1="${r(top - 3)}" y2="${r(top - 3)}" ${R.paint(null, 'code', 1)}/>`
       + R.text(pad, top + 10, 'THIS RUN', { size: 8.5, weight: 600, color: 'code', spacing: 0.6 }));
-    y += 14;
-    [['in', run.in], ['out', run.out], ['', run.note]].forEach(([label, value]) => {
+    y += 9;
+    [['SENT', run.in], ['GOT', run.out], ['', run.note]].forEach(([label, value]) => {
       if (!value) return;
-      y += 2;
-      const row = y;
-      if (label) ops.push(() => R.text(pad, row + 10.5, label.toUpperCase(), { size: 8.5, weight: 600, color: 'code', spacing: 0.6 }));
-      push(wrap(value, inner - (label ? 28 : 0), 11), { size: 11, color: 'code' }, 14, pad + (label ? 28 : 0));
+      if (label) section(label, value, { color: 'code' }, 'code');
+      else { y += 5; push(wrap(value, inner, 11), { size: 11, color: 'code' }, 14); }
     });
   }
   return {
     h: y + 9,
-    draw: h => `<rect class="cell" x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', TAGS[fx.tag].color, 1)}/>` + ops.map(f => f()).join(''),
+    anchors,
+    draw: h => `<rect class="cell" x="0" y="0" width="${w}" height="${r(h)}" rx="6" ${R.paint('card', color, 1)}/>` + ops.map(f => f()).join(''),
   };
+}
+
+// A model or API call is two arrows: the request out to the line saying what it sends, the answer back from the line
+// saying what returns. A read comes back from its fields; a write goes out to them.
+function effectArrows(f, top, from, R) {
+  const color = TAGS[f.fx.tag].color;
+  const at = dy => top + (dy || 15.5);
+  const line = (dy, head) => R.arrow([[from, at(dy)], [f.lane.x, at(dy)]], { head, color, width: 1.3 });
+  const a = f.cell.anchors;
+  if (f.fx.tag === 'READ') return line(a.data, 'start');
+  if (f.fx.tag === 'WRITE') return line(a.data, 'end');
+  if (a.send && a.back) return line(a.send, 'end') + line(a.back, 'start');
+  return line(a.send || a.back, 'both');
 }
 
 function buildBand(text, R, { label = 'TASK', fill = 'ink', fg = 'onTag', mono = true } = {}) {
@@ -1003,7 +1098,7 @@ function layoutRows(rows, prefix, depth, path, ctx) {
       const attrs = mode === 'page'
         ? ` data-fx="${esc(f.id)}" data-tag="${f.fx.tag}" data-entity="${esc(entityOf(f.fx))}" tabindex="0" role="button" aria-label="${esc(`${f.fx.tag} ${f.fx.title}: show details`)}"` : '';
       ctx.out.push(fade(`<g${attrs}>`
-        + R.arrow([[codeRight, fy + 15.5], [f.lane.x, fy + 15.5]], { head: HEAD_OF[f.fx.tag] })
+        + effectArrows(f, fy, codeRight, R)
         + `<g transform="translate(${f.lane.x} ${r(fy)})">${f.cell.draw(f.cell.h)}</g></g>`));
       fy += f.cell.h + 6;
     });
@@ -1077,12 +1172,18 @@ function buildDetailed(mode, only) {
     const laneBottom = ctx.y + 2;
     const lanes = ['llm', 'api', 'db'].map(k => `<rect x="${LANES[k].x - 8}" y="${r(laneTop)}" width="${LANES[k].w + 16}" height="${r(laneBottom - laneTop)}" rx="8" ${R.paint('band')}/>`).join('');
     const changed = ((CHECK.blocks || {})[id] || {}).changed || [];
+    const laneCounts = {};
+    walkRows(n.detail, '', row => (row.fx || []).forEach(fx => { laneCounts[LANE_OF[fx.tag]] = (laneCounts[LANE_OF[fx.tag]] || 0) + 1; }));
     const header = `<g id="d-${id}">`
       + `<rect x="${M}" y="${r(headerY)}" width="${W - 2 * M}" height="36" rx="8" ${R.paint('band', changed.length ? 'warn' : 'bandLine', changed.length ? 1.5 : 1)}/>`
       + R.text(M + 14, headerY + 23, n.num ? String(n.num).padStart(2, '0') : '·', { size: 12, color: 'faint', family: MONO })
       + R.text(M + 40, headerY + 23, n.title, { size: 14, weight: 600 })
       + (changed.length ? R.text(M + 48 + measure(n.title, 14, 600), headerY + 23, 'changed since drawn', { size: 11, weight: 600, color: 'warn' }) : '')
-      + ['llm', 'api', 'db'].map(k => R.text(LANES[k].x + LANES[k].w / 2, headerY + 22.5, LANES[k].title, { size: 10, weight: 600, color: LANES[k].color, anchor: 'middle', spacing: 1 })).join('')
+      + ['llm', 'api', 'db'].map(k => {
+        // How many calls this block makes into the lane; a lane it never reaches is greyed.
+        const n = laneCounts[k] || 0;
+        return R.text(LANES[k].x + LANES[k].w / 2, headerY + 22.5, n ? `${LANES[k].title} · ${n}` : LANES[k].title, { size: 10, weight: 600, color: n ? LANES[k].color : 'faint', anchor: 'middle', spacing: 1 });
+      }).join('')
       + (mode === 'page' ? copyButton(id, LANES.code.x + LANES.code.w - 66, headerY + 7, 'Copy') : '')
       + `</g>`;
     out.push(lanes + header + ctx.out.join(''));
@@ -1172,7 +1273,6 @@ function buildDataPage() {
     });
   }));
   const list = Object.values(ents).sort((a, b) => (b.reads + b.writes) - (a.reads + a.writes));
-  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const stepsTable = e => {
     let lastBlock = null;
     const rows = e.touches.map(t => {
@@ -1228,29 +1328,130 @@ function filterTables(text) {
 }
 
 let modelFilter = '';
+// Hover details for chart marks, by id; filled while the page is built. Every value is also in the list below.
+let TIPS = {};
+const fmtUSD = n => (n >= 100 ? `$${fmtInt(n)}` : n >= 0.01 ? `$${n.toFixed(2)}` : n > 0 ? '<$0.01' : '$0');
+const fmtCount = n => (n >= 10000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K` : fmtInt(n));
+const fmtDay = d => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?');
+const pct = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : '–');
+const plural = (n, word) => `${fmtInt(n)} ${word}${n === 1 ? '' : 's'}`;
+
 function buildModelsPage() {
+  TIPS = {};
+  const tip = (title, value, rows) => {
+    const id = `t${Object.keys(TIPS).length}`;
+    TIPS[id] = { title, value, rows };
+    return `data-tip="${id}" tabindex="0"`;
+  };
   const all = Object.entries(FX).filter(([, item]) => item.fx.tag === 'LLM').map(([fxId, item]) => ({ fxId, ...item }));
+  // A model keeps its colour wherever it shows: the order the workflow first calls it, never its rank.
+  const modelOrder = [...new Set(all.map(g => g.fx.title))];
+  const colorOf = title => { const i = modelOrder.indexOf(title); return i >= 0 && i < 8 ? `var(--m${i + 1})` : 'var(--m0)'; };
+  const sw = title => `<i class="sw" style="background:${colorOf(title)}"></i>`;
   const models = {};
   all.forEach(g => { models[g.fx.title] = (models[g.fx.title] || 0) + 1; });
-  // Units in the order the workflow first reaches them.
-  const groups = {};
-  all.filter(g => !modelFilter || g.fx.title === modelFilter).forEach(g => {
-    const unit = g.fx.unit || 'other';
-    (groups[unit] || (groups[unit] = [])).push(g);
-  });
+  const shown = all.filter(g => !modelFilter || g.fx.title === modelFilter);
+  const dim = title => (modelFilter && title !== modelFilter ? ' dim' : '');
+  const paint = f => (f.earlier ? 'var(--m0)' : colorOf(f.title));
+
+  // One entry per logged feature: two call sites logging under one name share one set of numbers.
+  const featuresOf = list => {
+    const out = {};
+    list.forEach(g => {
+      const st = g.fx.feature && STATS[g.fx.feature];
+      if (!st) return;
+      // Numbers measured on another model than the code calls now are that model's spend, not this one's.
+      const earlier = Boolean(st.model && g.fx.model && !sameModel(st.model, g.fx.model));
+      const f = out[g.fx.feature] || (out[g.fx.feature] = { feature: g.fx.feature, st, title: g.fx.title, earlier, blocks: [], spend: (st.calls || 0) * (st.cost_usd || 0) });
+      const num = SPEC.nodes[g.node].num;
+      if (!f.blocks.includes(num)) f.blocks.push(num);
+    });
+    return Object.values(out);
+  };
+  const feats = featuresOf(all);
+  const shownFeats = featuresOf(shown);
+  const unlogged = shown.filter(g => !(g.fx.feature && STATS[g.fx.feature]));
+  const units = new Set(shown.map(g => g.fx.unit || 'other'));
+  const loggedCalls = shownFeats.reduce((a, f) => a + (f.st.calls || 0), 0);
+  const spend = shownFeats.reduce((a, f) => a + f.spend, 0);
+  const since = shownFeats.map(f => f.st.since).filter(Boolean).sort()[0];
+
   const ex = example();
   const runCalls = (ex && ex.calls) || null;
   const runTotal = runCalls ? Object.values(runCalls).reduce((a, c) => ({ count: a.count + (c.count || 0), cost: a.cost + (c.cost_usd || 0) }), { count: 0, cost: 0 }) : null;
-  const num = (label, value, cls = '') => `<span class="${cls}"><i>${label}</i>${value}</span>`;
+
+  // Headline numbers, for the model picked or for all of them.
+  const kpi = (label, value, sub) => `<div class="kpi"><span>${esc(label)}</span><b>${esc(value)}</b><small>${esc(sub)}</small></div>`;
+  const tiles = [
+    kpi('Model calls in the code', fmtInt(shown.length), modelFilter ? `to ${modelFilter}, for ${plural(units.size, 'unit')} of work` : `to ${plural(Object.keys(models).length, 'model')}, for ${plural(units.size, 'unit')} of work`),
+    feats.length ? kpi('Calls logged', fmtCount(loggedCalls), `since ${fmtDay(since)}`) : '',
+    feats.length ? kpi('Spend logged', fmtUSD(spend), loggedCalls ? `about $${(spend / loggedCalls).toFixed(4)} a call on average` : 'nothing logged') : '',
+    feats.length && unlogged.length ? kpi('Not in the usage log', fmtInt(unlogged.length), `call site${unlogged.length === 1 ? '' : 's'} without numbers`) : '',
+    runTotal ? kpi('This example run', `${fmtInt(runTotal.count)} calls`, `about $${runTotal.cost.toFixed(3)} in all; each call's count is in This run below`) : '',
+  ].join('');
+
+  // Where the money goes: logged spend per feature, the biggest eight, the rest folded into one bar.
+  let charts = '';
+  if (feats.length) {
+    const ranked = feats.filter(f => f.spend > 0).sort((a, b) => b.spend - a.spend);
+    const total = ranked.reduce((a, f) => a + f.spend, 0);
+    const top = ranked.slice(0, 8), rest = ranked.slice(8);
+    const max = top.length ? top[0].spend : 1;
+    const bar = (frac, color) => `<span class="bar" style="width:calc((100% - 200px) * ${r(frac * 1000) / 1000});background:${color}"></span>`;
+    const blocks = f => f.blocks.map(n => `<span class="blk">${n ? String(n).padStart(2, '0') : '·'}</span>`).join('');
+    const spendRows = top.map(f => `<li class="${dim(f.title).trim()}" ${tip(f.feature, fmtUSD(f.spend), [
+      ...(f.earlier ? [['Measured on', f.st.model], ['Code calls now', f.title]] : [['Model', f.title]]), ['Calls', fmtInt(f.st.calls || 0)], ['Each', f.st.cost_usd != null ? `$${Number(f.st.cost_usd).toFixed(4)}` : '—'],
+      ['Tokens', f.st.in_tokens != null ? `${fmtInt(f.st.in_tokens)} in / ${fmtInt(f.st.out_tokens || 0)} out` : '—'], ['Share', pct(f.spend, total)], ['Since', fmtDay(f.st.since)]])}>`
+      + `<span class="lbl">${blocks(f)}<code title="${esc(f.feature)}">${esc(f.feature)}</code></span>`
+      + `<span class="track">${bar(f.spend / max, paint(f))}<span class="val"><b>${fmtUSD(f.spend)}</b> · ${pct(f.spend, total)}${f.earlier ? ` · <span class="earlier" title="Measured on ${esc(f.st.model)}">${esc(f.st.model)}</span>` : ''}</span></span></li>`).join('');
+    const restSpend = rest.reduce((a, f) => a + f.spend, 0);
+    const restRow = rest.length ? `<li ${tip(`${rest.length} more`, fmtUSD(restSpend), rest.map(f => [f.feature, fmtUSD(f.spend)]))}>`
+      + `<span class="lbl rest">${rest.length} more</span><span class="track">${bar(restSpend / max, 'var(--m0)')}<span class="val"><b>${fmtUSD(restSpend)}</b> · ${pct(restSpend, total)}</span></span></li>` : '';
+    const free = feats.filter(f => !f.spend).length;
+    const spendChart = `<figure class="viz"><h3>Where the spend goes<small>Logged calls × average cost, per logged feature, since each was first logged</small></h3>`
+      + `<ol class="hbars">${spendRows}${restRow}</ol>`
+      + (free ? `<p class="viz-note">${plural(free, 'feature')} logged at no cost.</p>` : '')
+      + `</figure>`;
+
+    // How spend and calls split by model: two bars of the same total, so a model's cost per call shows as the gap.
+    const sum = (fs, more) => ({ spend: fs.reduce((a, f) => a + f.spend, 0), calls: fs.reduce((a, f) => a + (f.st.calls || 0), 0), logged: fs.length > 0, ...more });
+    const byModel = modelOrder.map(title => sum(feats.filter(f => f.title === title && !f.earlier), { title, color: colorOf(title) }));
+    // Spend logged on models the code no longer calls, in one grey group after the models it calls now.
+    const old = feats.filter(f => f.earlier);
+    if (old.length) byModel.push(sum(old, { title: 'Earlier models', color: 'var(--m0)', old: [...new Set(old.map(f => f.st.model))] }));
+    const callsTotal = byModel.reduce((a, m) => a + m.calls, 0);
+    const spendTotal = byModel.reduce((a, m) => a + m.spend, 0);
+    const stack = (key, whole, fmt) => `<div class="stack">${byModel.filter(m => m[key] > 0).map(m => `<i class="${dim(m.title).trim()}" style="flex:${m[key]} 1 0;background:${m.color}" ${tip(m.title, fmt(m[key]), [['Share', pct(m[key], whole)], ...(m.old ? [['Logged on', m.old.join(', ')]] : [])])}></i>`).join('')}</div>`;
+    const missing = modelOrder.filter(t => !feats.some(f => f.title === t));
+    const shareChart = `<figure class="viz"><h3>By model<small>Share of logged spend and of logged calls</small></h3>`
+      + `<div class="shares"><div class="share"><span>Spend · ${fmtUSD(spendTotal)}</span>${stack('spend', spendTotal, fmtUSD)}</div>`
+      + `<div class="share"><span>Calls · ${fmtCount(callsTotal)}</span>${stack('calls', callsTotal, fmtInt)}</div></div>`
+      + `<table class="mlist"><thead><tr><th>Model</th><th>Spend</th><th>Calls</th></tr></thead><tbody>`
+      + byModel.filter(m => m.logged).map(m => `<tr${m.old ? ` title="${esc(m.old.join(', '))}"` : ` data-model="${esc(m.title)}"`} class="${m.old ? '' : dim(m.title).trim()}"><td><i class="sw" style="background:${m.color}"></i>${esc(m.title)}</td>`
+        + `<td class="num">${fmtUSD(m.spend)} · ${pct(m.spend, spendTotal)}</td><td class="num">${fmtCount(m.calls)} · ${pct(m.calls, callsTotal)}</td></tr>`).join('')
+      + `</tbody></table>`
+      + (old.length ? `<p class="viz-note">Earlier models: ${esc(byModel[byModel.length - 1].old.join(', '))}. Spend logged before the code switched to the model it calls now.</p>` : '')
+      + (missing.length ? `<p class="viz-note">Not in the usage log: ${esc(missing.join(', '))}.</p>` : '')
+      + `</figure>`;
+    charts = `<div class="viz-row">${spendChart}${shareChart}</div>`;
+  }
+
+  // The list: every call site by unit of work; each number has a small bar against the largest in its column.
+  const groups = {};
+  shown.forEach(g => { const unit = g.fx.unit || 'other'; (groups[unit] || (groups[unit] = [])).push(g); });
+  const maxOf = key => Math.max(0, ...feats.map(f => Number(f.st[key]) || 0));
+  const maxIn = maxOf('in_tokens'), maxCost = maxOf('cost_usd'), maxMs = maxOf('ms_p50');
+  const num = (label, value, frac, cls = '') => `<span class="${cls}"><span><i>${label}</i>${value}</span>`
+    + (frac != null ? `<span class="meter"><b style="width:${r(Math.max(frac, 0.01) * 100)}%"></b></span>` : '') + `</span>`;
   const row = g => {
     const st = g.fx.feature && STATS[g.fx.feature];
     const earlier = st && st.model && g.fx.model && !sameModel(st.model, g.fx.model);
     const run = runCalls && g.fx.feature ? runCalls[g.fx.feature] : null;
     const nums = [
-      num('tokens', st && st.in_tokens != null ? `${fmtInt(st.in_tokens)} / ${fmtInt(st.out_tokens || 0)}` : '—'),
-      num('cost', st && st.cost_usd != null ? `$${Number(st.cost_usd).toFixed(4)}` : '—'),
-      num('time', st && st.ms_p50 != null ? `${(st.ms_p50 / 1000).toFixed(1)} s` : '—'),
-      ...(runCalls ? [num('this run', run ? `${fmtInt(run.count)}× · $${Number(run.cost_usd || 0).toFixed(4)}` : 'not called', 'run')] : []),
+      num('tokens', st && st.in_tokens != null ? `${fmtInt(st.in_tokens)} / ${fmtInt(st.out_tokens || 0)}` : '—', st && maxIn ? (st.in_tokens || 0) / maxIn : null),
+      num('cost', st && st.cost_usd != null ? `$${Number(st.cost_usd).toFixed(4)}` : '—', st && maxCost ? (st.cost_usd || 0) / maxCost : null),
+      num('time', st && st.ms_p50 != null ? `${(st.ms_p50 / 1000).toFixed(1)} s` : '—', st && maxMs ? (st.ms_p50 || 0) / maxMs : null),
+      ...(runCalls ? [num('this run', run ? `${fmtInt(run.count)}× · $${Number(run.cost_usd || 0).toFixed(4)}` : 'not called', null, 'run')] : []),
     ].join('');
     const meta = [
       g.fx.times ? `<span><em>Runs</em>${esc(g.fx.times)}</span>` : '',
@@ -1259,7 +1460,7 @@ function buildModelsPage() {
     const block = SPEC.nodes[g.node].num ? String(SPEC.nodes[g.node].num).padStart(2, '0') : '·';
     return `<li class="call" data-card="${esc(g.fxId)}" tabindex="0" role="button" aria-label="${esc(`${g.fx.title} ${g.fx.feature || ''}: show details`)}">`
       + `<span class="blk" title="${esc(blockLabel(g.node))}">${block}</span>`
-      + `<div class="what"><div class="l1"><b>${esc(g.fx.title)}</b>${g.fx.feature ? `<code>${esc(g.fx.feature)}</code>` : ''}`
+      + `<div class="what"><div class="l1">${sw(g.fx.title)}<b>${esc(g.fx.title)}</b>${g.fx.feature ? `<code>${esc(g.fx.feature)}</code>` : ''}`
       + `${earlier ? `<span class="earlier" title="Usage measured on ${esc(st.model)}">earlier model</span>` : ''}</div>`
       + (meta ? `<div class="l2">${meta}</div>` : '')
       + `<p class="l3" title="${esc(rowLabel(g.row))}">${esc(rowLabel(g.row))}</p></div>`
@@ -1269,12 +1470,13 @@ function buildModelsPage() {
   const filter = Object.keys(models).length > 1
     ? `<div class="msum"><span class="glabel">Model</span><span class="chips" role="group" aria-label="Show calls to one model">`
       + `<button type="button" data-model="" aria-pressed="${!modelFilter}">All · ${all.length}</button>`
-      + Object.entries(models).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<button type="button" data-model="${esc(m)}" aria-pressed="${modelFilter === m}">${esc(m)} · ${n}</button>`).join('')
+      + Object.entries(models).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<button type="button" data-model="${esc(m)}" aria-pressed="${modelFilter === m}">${sw(m)}${esc(m)} · ${n}</button>`).join('')
       + `</span></div>`
     : '';
-  return `<p>Every place the agent calls a model, by the unit of work it runs for. Numbers are averages per call from your usage log; click a call for its prompt and output schema.</p>`
-    + (runTotal ? `<p>The example run made ${fmtInt(runTotal.count)} model calls for about $${runTotal.cost.toFixed(3)}; the This run column shows how many of each.</p>` : '')
+  return `<p>Every place the agent calls a model, by the unit of work it runs for. Numbers come from your usage log; click a call for its prompt and output schema.</p>`
     + filter
+    + `<div class="kpis">${tiles}</div>`
+    + (feats.length ? charts : `<p>No usage numbers yet. Write <code>stats.json</code> beside the workflow to see calls, spend, tokens and time here.</p>`)
     + Object.entries(groups).map(([unit, items]) => `<section class="unit${runCalls ? ' withrun' : ''}"><header><h3>For each ${esc(unit)}<small>${items.length} call${items.length === 1 ? '' : 's'}</small></h3>${cols}</header>`
       + `<ol class="calls">${items.map(row).join('')}</ol></section>`).join('');
 }
@@ -1605,7 +1807,7 @@ function show(next, opts = {}) {
   });
   document.getElementById('page').addEventListener('click', e => {
     const model = e.target.closest('[data-model]');
-    if (model) { modelFilter = model.dataset.model; render(); return; }
+    if (model) { modelFilter = modelFilter === model.dataset.model ? '' : model.dataset.model; hideTip(); render(); return; }
     const jump = e.target.closest('[data-jump]');
     if (jump) { const card = document.getElementById(`e-${jump.dataset.jump}`); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const goto = e.target.closest('[data-goto]');
@@ -1615,6 +1817,20 @@ function show(next, opts = {}) {
     const row = e.target.closest('[data-card]');
     if (row) openCard(row.dataset.card);
   });
+  // Chart marks show their numbers on hover and on keyboard focus.
+  const page = document.getElementById('page');
+  page.addEventListener('pointermove', e => {
+    const mark = e.target.closest('[data-tip]');
+    if (mark) showTip(mark, e.clientX, e.clientY); else hideTip();
+  });
+  page.addEventListener('pointerleave', hideTip);
+  page.addEventListener('focusin', e => {
+    const mark = e.target.closest('[data-tip]');
+    if (!mark) return;
+    const box = mark.getBoundingClientRect();
+    showTip(mark, box.left + Math.min(box.width, 200), box.bottom);
+  });
+  page.addEventListener('focusout', hideTip);
   document.getElementById('page').addEventListener('input', e => { if (e.target.id === 'table-filter') filterTables(e.target.value); });
   document.getElementById('page').addEventListener('keydown', e => {
     const row = e.target.closest('.call[data-card]');
@@ -1630,6 +1846,31 @@ function show(next, opts = {}) {
     else copyOut(workflowText(), 'Copied the workflow as Markdown. Paste it into your coding agent.', 'Copy the selected Markdown below.');
   });
 })();
+
+// Built with textContent: names come from the workflow and the usage log.
+function showTip(mark, x, y) {
+  const t = TIPS[mark.dataset.tip];
+  const box = document.getElementById('tip');
+  if (!t) { hideTip(); return; }
+  box.replaceChildren();
+  const value = document.createElement('b');
+  value.textContent = t.value;
+  const title = document.createElement('div');
+  title.className = 't';
+  title.textContent = t.title;
+  const dl = document.createElement('dl');
+  (t.rows || []).forEach(([k, v]) => {
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = k; dd.textContent = v;
+    dl.append(dt, dd);
+  });
+  box.append(value, title, dl);
+  box.hidden = false;
+  const w = box.offsetWidth, h = box.offsetHeight;
+  box.style.left = `${Math.max(8, Math.min(x + 14, innerWidth - w - 8))}px`;
+  box.style.top = `${y + 16 + h > innerHeight ? y - h - 12 : y + 16}px`;
+}
+function hideTip() { document.getElementById('tip').hidden = true; }
 
 // Where the clipboard is blocked, the text goes in a box, selected, to copy by hand.
 function copyOut(text, done, manual) {

@@ -29,7 +29,7 @@
             { "t": "if", "cond": "Signature does not match", "at": "webhooks/zendesk.ts:21", "match": "verifySignature", "then": "answer 401", "side": "yes" },
             {
               "t": "fn", "fn": "fetchTicket(ticketId)", "returns": "Ticket", "at": "integrations/zendesk.ts:40",
-              "fx": [{ "tag": "API", "title": "Zendesk", "method": "GET", "endpoint": "/api/v2/tickets/{id}?include=users,comments", "text": "ticket, requester, earlier comments" }]
+              "fx": [{ "tag": "API", "title": "Zendesk", "method": "GET", "endpoint": "/api/v2/tickets/{id}?include=users,comments", "in": "ticket id", "out": "ticket, requester, earlier comments" }]
             },
             {
               "t": "do", "title": "Store the ticket", "at": "webhooks/zendesk.ts:30", "match": "db.ticket.upsert",
@@ -103,7 +103,7 @@
                     {
                       "when": "search_docs(query)",
                       "rows": [{ "t": "fn", "fn": "searchDocs(query, k = 6)", "returns": "Chunk[]", "at": "tools/search.ts:12",
-                                 "fx": [{ "tag": "LLM", "title": "OpenAI embeddings", "model": "text-embedding-3-small", "prompt": "inline", "feature": "docs_embed_query", "unit": "ticket", "times": "0–8" },
+                                 "fx": [{ "tag": "LLM", "title": "OpenAI embeddings", "model": "text-embedding-3-small", "prompt": "inline", "feature": "docs_embed_query", "unit": "ticket", "times": "0–8", "in": "the search query the model wrote", "out": "one 1,536-number vector" },
                                         { "tag": "READ", "title": "pgvector: doc_chunks", "text": "6 nearest chunks", "fields": ["embedding", "text", "url"] }] }]
                     },
                     {
@@ -117,7 +117,7 @@
                         { "t": "if", "cond": "Amount over $200", "at": "tools/billing.ts:19", "match": "amount > REFUND_LIMIT", "then": "refuse; the model is told to escalate", "side": "yes" },
                         { "t": "fn", "fn": "refundOrder(orderId, amount)", "at": "tools/billing.ts:30", "lock": "Redis lock refund:{orderId}, 30 s",
                           "risks": ["The $200 limit is only enforced inside the tool; the prompt never states it, so the model can promise a refund before the tool refuses."],
-                          "fx": [{ "tag": "API", "title": "Stripe", "method": "POST", "endpoint": "/v1/refunds" },
+                          "fx": [{ "tag": "API", "title": "Stripe", "method": "POST", "endpoint": "/v1/refunds", "in": "payment intent, amount in cents", "out": "refund id and status" },
                                  { "tag": "WRITE", "title": "Order", "fields": ["refunded_amount"], "sets": { "refund_status": "refunded" } }] }
                       ]
                     },
@@ -150,7 +150,7 @@
         },
         {
           "t": "fn", "fn": "postReply(ticket, draft)", "at": "integrations/zendesk.ts:72",
-          "fx": [{ "tag": "API", "title": "Zendesk", "method": "PUT", "endpoint": "/api/v2/tickets/{id}", "text": "public comment" },
+          "fx": [{ "tag": "API", "title": "Zendesk", "method": "PUT", "endpoint": "/api/v2/tickets/{id}", "in": "the reply as a public comment, status solved", "out": "the updated ticket" },
                  { "tag": "WRITE", "title": "Ticket", "fields": ["status", "sent_at"], "sets": { "status": "sent" } }]
         }
       ]

@@ -21,9 +21,9 @@ One page, `docs/agent-workflow/index.html`, with five views:
 | View | Shows |
 | --- | --- |
 | **Overview** | 6 to 14 numbered blocks in bands, one band per unit of work (each request, each document), and the decisions that split the path. |
-| **Detailed** | Each block's functions in the order they run, nested by call, condition and loop. Every model, API and database call is an arrow into its own column. Choices the model makes are marked, side and failure paths are faded, and you can show only the main path or only the failures. |
+| **Detailed** | Each block's functions in the order they run, nested by call, condition and loop. Every model, API and database call goes into its own column, with what the code sends and what comes back, or the fields it reads and writes. Choices the model makes are marked, side and failure paths are faded, and you can show only the main path or only the failures. |
 | **Data** | Every table and store, the status values it moves through and the step that sets each one, and every step that reads or writes it. |
-| **Model calls** | Every model call, how often it runs per unit of work, its prompt and output schema, and tokens, cost and time per call when your usage logs have them. |
+| **Model calls** | Spend and calls logged, where the spend goes by call and by model, then every model call, how often it runs per unit of work, its prompt and output schema, and tokens, cost and time per call when your usage logs have them. |
 | **Risks** | Problems found while tracing, such as races, paths that never run or settings nothing sets, each linked to its line of code. |
 
 ![The agent loop of the support agent, with an example run laid over it](docs/images/detailed.png)

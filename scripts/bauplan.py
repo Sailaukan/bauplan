@@ -189,6 +189,12 @@ def run_check(spec, root, examples=()):
         prompt = fx.get('prompt')
         if fx.get('tag') == 'LLM' and prompt and prompt != 'inline':
             prompts[prompt] = 'ok' if (prompts_root / prompt).is_file() else 'missing'
+    # Model and API calls that do not say what they send or get back: the detailed view can only show the prompt file.
+    silent = [
+        f"{label(spec, node_id)}: {fx.get('title')}{' (' + fx['feature'] + ')' if fx.get('feature') else ''}"
+        for node_id, _, _, fx in effects(spec)
+        if fx.get('tag') in ('LLM', 'API') and not (fx.get('in') and (fx.get('out') or fx.get('schema')))
+    ]
     files_missing = sorted(
         node['file'] for node in spec['nodes'].values()
         if node.get('file') and not (code_root / node['file']).exists()
@@ -216,6 +222,7 @@ def run_check(spec, root, examples=()):
         'counts': counts,
         'prompts_missing': sorted(p for p, s in prompts.items() if s == 'missing'),
         'files_missing': files_missing,
+        'calls_without_payload': silent,
         'changed_blocks': [i for i in order if blocks.get(i, {}).get('changed')],
         'examples_stale': stale_example_keys(spec, examples),
     }
@@ -246,6 +253,12 @@ def report(spec, spec_path, result):
         out.append(f"  Prompt files not found: {', '.join(s['prompts_missing'])}")
     if s['files_missing']:
         out.append(f"  Overview file paths not found: {', '.join(s['files_missing'])}")
+    if s.get('calls_without_payload'):
+        silent = s['calls_without_payload']
+        out.append(f"  {len(silent)} model or API call(s) do not say what they send (in) and get back (out or schema):")
+        out.extend(f'    {item}' for item in silent[:8])
+        if len(silent) > 8:
+            out.append(f'    and {len(silent) - 8} more')
     for example_id, keys in s.get('examples_stale', {}).items():
         out.append(f"  Example {example_id} names {len(keys)} step(s) no longer in the workflow: {', '.join(keys[:6])}")
     if s['changed_blocks']:

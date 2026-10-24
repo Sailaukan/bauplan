@@ -14,7 +14,8 @@ It is one file, `docs/agent-workflow/workflow.json`, rendered into `docs/agent-w
 - **Detailed**: each block's functions in the order they run, nested by call, condition and loop, with every call
   drawn as an arrow into its column (LLM, external API, database and files). Side paths are faded.
 - **Data**: every table and store, the status values it moves through, and every step that reads or writes it.
-- **Model calls**: every model call grouped by unit of work, with how often it runs and its usage numbers.
+- **Model calls**: spend and calls logged, where the spend goes and how it splits by model, then every model call
+  grouped by unit of work, with how often it runs and its usage numbers.
 - **Risks**: problems found while tracing, each linked to its row.
 
 The detailed view can show all paths, the main path only, or failure paths only, and can lay a real example run over
@@ -43,7 +44,9 @@ it. `assets/example-workflow.json` is a complete small example to start from.
    - One row per thing a developer must know about: a decision, a call out, a write, a handoff to a queue or
      another agent. Fold formatting, logging and small getters into a note.
    - Every model call carries its model id, prompt file, output schema, logged feature name, how often it runs,
-     the rule applied to its answer and its fallbacks. Every API call its method and endpoint. Every read or
+     the rule applied to its answer and its fallbacks. Every API call its method and endpoint. Both say what the
+     code sends (`in`) and what it uses from the answer (`out`), read from the code that builds the request and
+     reads the reply. Every read or
      write its fields, and `sets` for every status, stage or state value, so the Data view can show the lifecycle.
    - Mark the branch that leaves the main path with `side`, and end stopped paths with an `end` row.
    - Mark what readers most often get wrong: `fail` on branches that handle errors, `retries` on queued work,
@@ -67,7 +70,7 @@ it. `assets/example-workflow.json` is a complete small example to start from.
    run is what turns the diagram from a description into something a developer can check against reality.
 6. **Check against the code.**
    `python3 <this skill's folder>/scripts/bauplan.py check docs/agent-workflow/workflow.json`
-   Repeat until nothing is "not found". `--fix` rewrites line numbers of rows that only moved; a function that is
+   Repeat until nothing is "not found", and fill in `in` and `out` on the model and API calls it lists. `--fix` rewrites line numbers of rows that only moved; a function that is
    gone means that part of the agent changed, so retrace it.
 7. **Render and look.** `python3 <this skill's folder>/scripts/bauplan.py render docs/agent-workflow/workflow.json`,
    then open `docs/agent-workflow/index.html` and look at it once (a screenshot is enough) for clipped or

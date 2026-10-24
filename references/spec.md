@@ -119,10 +119,16 @@ An agent loop where the model picks tools:
 ## Effects (`fx`)
 
 An effect is something a row does outside the code: a model call, an API call, a read or a write. Each one is drawn
-in its column with an arrow from the row: into the database for a write, back to the code for a read, both ways for
-a model or API call.
+in its column, and its arrows land on what crosses: a model or API call is two arrows, the request out to what it
+sends and the answer back from what returns; a read comes back from the fields it reads; a write goes out to the
+fields it writes.
 
 Every effect: `tag` (`LLM`, `API`, `READ`, `WRITE`), `title`, `text`? (one short line), `in`?, `out`?.
+
+- `in` and `out`, on every model and API call: what the code puts in the request (`"subject, body, plan, last 3
+  comments"`) and what it uses from the answer (`"category, urgent, confidence"`). They are what a reader most wants
+  from the diagram, so `check` lists every model or API call without them. A model call's `schema` stands in for
+  `out`; without `in` the view can only say which prompt file was sent.
 
 **READ and WRITE** cover databases, caches, vector stores, queues read as data, files and object storage.
 - `title`: the table or store, its name first: `Ticket`, `Ticket + attachment`, `Redis cache`, `pgvector: chunks`.
@@ -155,7 +161,9 @@ returns a decision.
                        "cost_usd": 0.0016, "ms_p50": 1900, "since": "2026-08-11" } }
 ```
 
-Averages per successful call; `ms_p50` is the median duration in milliseconds. When the numbers were measured on a
+Averages per successful call; `ms_p50` is the median duration in milliseconds. The Model calls view multiplies
+`calls` by `cost_usd` for the spend of each feature since `since`, so `calls` should count every call logged since
+that day. When the numbers were measured on a
 different model than the one the code calls now, `model` says which, and the viewer shows it. A dated snapshot the
 provider logs counts as the model the code calls: `gpt-4o-2024-08-06` for `gpt-4o`, but not `gpt-4o-mini`.
 
