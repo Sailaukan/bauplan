@@ -613,10 +613,13 @@ function svgShell(width, height, aria, body, R) {
     + `<rect x="0" y="0" width="${width}" height="${r(height)}" ${R.paint('bg')}/>` + body + `</svg>`;
 }
 
-// Copies a block as Markdown. Drawn on the page only, never into the SVG export; x, y is its top-left corner.
+// Copies a block, or with id "band:<index>" a whole band, as Markdown. Drawn on the page only, never into the SVG
+// export; x, y is its top-left corner.
+const copyName = id => (id.startsWith('band:') ? `every block in ${SPEC.bands[Number(id.slice(5))].title}` : blockLabel(id));
+const copyWidth = label => (label ? r(30 + measure(label, 11.5, 500)) : 24);
 function copyButton(id, x, y, label = '') {
-  const w = label ? r(30 + measure(label, 11.5, 500)) : 24;
-  return `<g data-copy="${esc(id)}" tabindex="0" role="button" aria-label="Copy ${esc(blockLabel(id))} as Markdown"><title>Copy as Markdown</title>`
+  const w = copyWidth(label);
+  return `<g data-copy="${esc(id)}" tabindex="0" role="button" aria-label="Copy ${esc(copyName(id))} as Markdown"><title>Copy as Markdown</title>`
     + `<rect class="cp-box" x="${r(x + 0.5)}" y="${r(y + 0.5)}" width="${w - 1}" height="21" rx="5"/>`
     + `<rect class="cp-ico" x="${r(x + 9.5)}" y="${r(y + 7.5)}" width="8" height="9" rx="1.5"/>`
     + `<path class="cp-ico" d="M${r(x + 6.5)} ${r(y + 13.5)} V${r(y + 6)} a1.5 1.5 0 0 1 1.5 -1.5 H${r(x + 14)}"/>`
@@ -778,7 +781,7 @@ function buildOverview(mode) {
 
   const stretches = kind => kind === 'block' || kind === 'person' || kind === 'output';
   const changedIds = new Set(Object.keys(CHECK.blocks || {}).filter(id => (CHECK.blocks[id].changed || []).length));
-  SPEC.bands.forEach(band => {
+  SPEC.bands.forEach((band, bi) => {
     const y0 = y, rowTop = y0 + 50, arrowY = rowTop + 26;
     const items = band.main.map(id => {
       const n = SPEC.nodes[id], w = n.w || SIZES[n.kind] || SIZES.block;
@@ -815,10 +818,17 @@ function buildOverview(mode) {
     const bh = bottom + 18 - y0;
     band.box = { y: y0, h: bh };
     const caps = band.title.toUpperCase();
+    // On the page the band's top-right corner copies every block in it; the note stops short of that button.
+    const copyLabel = 'Copy all blocks';
+    const copyX = OW - M - PAD - copyWidth(copyLabel);
+    const noteX = M + PAD + measure(caps, 11.5, 600) + caps.length + 14;
+    let note = band.note || '';
+    if (mode === 'page') while (note && measure(note, 11.5) > copyX - 16 - noteX) note = `${note.slice(0, -2).trimEnd()}…`;
     layers.bands.push(
       `<rect x="${M}" y="${r(y0)}" width="${OW - 2 * M}" height="${r(bh)}" rx="12" ${R.paint('band', 'bandLine', 1)}/>`
       + R.text(M + PAD, y0 + 27, caps, { size: 11.5, weight: 600, spacing: 1 })
-      + R.text(M + PAD + measure(caps, 11.5, 600) + caps.length + 14, y0 + 27, band.note || '', { size: 11.5, color: 'muted' }),
+      + R.text(noteX, y0 + 27, note, { size: 11.5, color: 'muted' })
+      + (mode === 'page' && bandIds(band).some(id => SPEC.nodes[id].detail || (SPEC.nodes[id].items || []).length) ? copyButton(`band:${bi}`, copyX, y0 + 12, copyLabel) : ''),
     );
     y = y0 + bh + BAND_GAP;
   });
@@ -1562,19 +1572,31 @@ function blockText(id) {
   if (n.handoff) out.push('', `Hands on: ${n.handoff.data}${n.handoff.state ? `; ${n.handoff.state}` : ''}`);
   return out.join('\n');
 }
-function workflowText() {
+const bandIds = band => [...band.main, ...(band.side || []).map(sd => sd.id)].filter(id => SPEC.nodes[id]);
+// The whole workflow, or with a band index only that band: its chart, where it comes from and goes on to, its blocks.
+function workflowText(only) {
   const d = SPEC.drawn_at || {};
   const label = s => `"${String(s).replace(/"/g, '#quot;')}"`;
   const mid = id => `n_${id.replace(/\W/g, '_')}`;
   const shape = id => ({ decision: `{${label(blockLabel(id))}}`, trigger: `([${label(blockLabel(id))}])` }[SPEC.nodes[id].kind] || `[${label(blockLabel(id))}]`);
-  const bandIds = band => [...band.main, ...(band.side || []).map(sd => sd.id)].filter(id => SPEC.nodes[id]);
+  const bands = only == null ? SPEC.bands.map((band, i) => [band, i]) : [[SPEC.bands[only], only]];
+  const inside = new Set(bands.flatMap(([band]) => bandIds(band)));
   const chart = ['flowchart LR'];
-  SPEC.bands.forEach((band, i) => chart.push(`  subgraph band${i}[${label(band.title)}]`, ...bandIds(band).map(id => `    ${mid(id)}${shape(id)}`), '  end'));
-  SPEC.edges.forEach(e => chart.push(`  ${mid(e.from)} ${e.dashed ? '-.->' : '-->'}${e.label ? `|${label(e.label)}|` : ''} ${mid(e.to)}`));
-  const blocks = SPEC.bands.flatMap(bandIds).filter(id => SPEC.nodes[id].detail || (SPEC.nodes[id].items || []).length);
+  bands.forEach(([band, i]) => chart.push(`  subgraph band${i}[${label(band.title)}]`, ...bandIds(band).map(id => `    ${mid(id)}${shape(id)}`), '  end'));
+  SPEC.edges.filter(e => inside.has(e.from) && inside.has(e.to))
+    .forEach(e => chart.push(`  ${mid(e.from)} ${e.dashed ? '-.->' : '-->'}${e.label ? `|${label(e.label)}|` : ''} ${mid(e.to)}`));
+  const across = (edges, end) => edges.map(e => `${blockLabel(e[end])}${e.label ? ` (${e.label})` : ''}`).join('; ');
+  const from = across(SPEC.edges.filter(e => inside.has(e.to) && !inside.has(e.from) && SPEC.nodes[e.from]), 'from');
+  const to = across(SPEC.edges.filter(e => inside.has(e.from) && !inside.has(e.to) && SPEC.nodes[e.to]), 'to');
+  const blocks = [...inside].filter(id => SPEC.nodes[id].detail || (SPEC.nodes[id].items || []).length);
+  const band = only == null ? null : SPEC.bands[only];
   return [
-    `# ${SPEC.title}`, '',
+    band ? `# ${SPEC.title}: ${band.title}` : `# ${SPEC.title}`, '',
+    ...(band && band.note ? [band.note, ''] : []),
     `Traced at commit ${d.commit || '?'}${d.date ? `, ${d.date}` : ''}. Paths are from the repository root.`, '',
+    ...(from ? [`Comes from: ${from}.`] : []),
+    ...(to ? [`Goes on to: ${to}.`] : []),
+    ...(from || to ? [''] : []),
     '```mermaid', ...chart, '```',
     ...blocks.map(id => `\n${blockText(id)}`),
   ].join('\n');
@@ -1890,7 +1912,8 @@ function copyOut(text, done, manual) {
   }
 }
 function copyBlock(id) {
-  copyOut(blockText(id), `Copied ${blockLabel(id)} as Markdown.`, 'Copy the selected Markdown below.');
+  const text = id.startsWith('band:') ? workflowText(Number(id.slice(5))) : blockText(id);
+  copyOut(text, `Copied ${copyName(id)} as Markdown.`, 'Copy the selected Markdown below.');
 }
 
 render();
